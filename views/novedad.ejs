@@ -1,0 +1,300 @@
+<%- include('partials/header', { titulo: 'Novedad - Labelec Ingeniería' }) %>
+
+<style>
+    /* --- Estilos Específicos de la página de Novedad --- */
+    .main-novedad-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 40px;
+        background-color: var(--color-fondo, #fff);
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        min-height: 400px; /* Altura mínima para que se vea bien si carga lento */
+    }
+    
+    #novedad-loader {
+        text-align: center;
+        font-size: 1.2em;
+        color: #666;
+        padding: 60px;
+    }
+
+    #novedad-content { display: none; }
+
+    .novedad-header {
+        border-bottom: 2px solid #eee;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+    }
+    .novedad-header h1 { 
+        font-size: 36px; 
+        color: var(--color-primario, #1073AC); 
+        margin-bottom: 10px; 
+        line-height: 1.3;
+    }
+    .novedad-header .fecha { 
+        font-size: 14px; 
+        font-weight: 600; 
+        color: var(--color-acento-servicio, #96C94D); 
+        margin-bottom: 10px; 
+        text-transform: uppercase;
+    }
+    .novedad-header .resumen { 
+        font-size: 20px; 
+        font-weight: 400; 
+        color: var(--color-secundario, #727376); 
+        line-height: 1.5; 
+        font-style: italic;
+    }
+
+    .novedad-imagen-principal {
+        width: 100%;
+        height: auto;
+        max-height: 500px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        cursor: zoom-in;
+    }
+
+    .novedad-cuerpo {
+        font-size: 17px;
+        color: var(--color-texto, #333);
+        line-height: 1.8;
+        white-space: pre-wrap; /* Mantiene los párrafos del texto original */
+    }
+    .novedad-cuerpo p { margin-bottom: 20px; }
+    
+    .novedad-galeria {
+        margin-top: 50px;
+        padding-top: 30px;
+        border-top: 1px solid #eee;
+    }
+    .novedad-galeria h3 { 
+        font-size: 22px; 
+        color: var(--color-primario, #1073AC); 
+        margin-bottom: 20px;
+    }
+    .novedad-galeria-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    .novedad-galeria-grid img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        cursor: zoom-in;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .novedad-galeria-grid img:hover {
+        opacity: 0.9;
+        transform: scale(1.02);
+    }
+    
+    .novedad-back-button { 
+        text-align: center; 
+        margin-top: 60px; 
+        padding-top: 20px; 
+        border-top: 1px solid #eee;
+    }
+    .btn-volver {
+        display: inline-block;
+        padding: 12px 30px;
+        background-color: var(--color-primario, #1073AC);
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: 600;
+        transition: background 0.3s;
+        cursor: pointer;
+    }
+    .btn-volver:hover {
+        background-color: #0d5a8a;
+    }
+
+    /* Lightbox */
+    .lightbox { display: none; position: fixed; z-index: 2000; padding-top: 50px;
+        left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.9);
+    }
+    .lightbox-content { margin: auto; display: block; max-width: 90%; max-height: 90vh; object-fit: contain; animation: zoom 0.3s; }
+    .lightbox-close { position: absolute; top: 20px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
+    @keyframes zoom { from {transform: scale(0.8)} to {transform: scale(1)} }
+</style>
+
+<main>
+    <div class="container">
+        <div class="main-novedad-container">
+            
+            <div id="novedad-loader">
+                <p>Cargando novedad...</p>
+            </div>
+
+            <div id="novedad-error" style="display:none; text-align:center; padding:40px; color: #e74c3c;">
+                <h3 style="margin-bottom: 20px;">⚠️ No se pudo cargar la novedad</h3>
+                <p id="error-text" style="margin-bottom: 20px; color: #666;"></p>
+                <a href="/#novedades" class="btn-volver">Volver al Inicio</a>
+            </div>
+
+            <article id="novedad-content">
+                
+                <header class="novedad-header">
+                    <p class="fecha" id="novedad-fecha"></p>
+                    <h1 id="novedad-titulo"></h1>
+                    <p class="resumen" id="novedad-resumen"></p>
+                </header>
+
+                <img src="" alt="" id="novedad-imagen-principal" class="novedad-imagen-principal" onclick="openLightbox(this.src)">
+
+                <section class="novedad-cuerpo" id="novedad-cuerpo">
+                    </section>
+                
+                <section class="novedad-galeria" id="novedad-galeria-container" style="display:none;">
+                    <h3>Galería de Fotos</h3>
+                    <div class="novedad-galeria-grid" id="novedad-galeria-grid"></div>
+                </section>
+                
+                <div class="novedad-back-button">
+                    <a href="/#novedades" class="btn-volver">Volver a Novedades</a>
+                </div>
+
+            </article>
+
+        </div>
+    </div>
+</main>
+
+<div id="image-lightbox" class="lightbox" onclick="this.style.display='none'">
+    <span class="lightbox-close">&times;</span>
+    <img class="lightbox-content" id="lightbox-img">
+</div>
+
+<script>
+    // Función Global para Lightbox
+    function openLightbox(src) {
+        const lightbox = document.getElementById('image-lightbox');
+        const img = document.getElementById('lightbox-img');
+        img.src = src;
+        lightbox.style.display = 'block';
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        
+        const loader = document.getElementById('novedad-loader');
+        const content = document.getElementById('novedad-content');
+        const errorBox = document.getElementById('novedad-error');
+        const errorText = document.getElementById('error-text');
+
+        // 1. Validar que existe un ID en la URL
+        if (!id || id === "undefined" || id === "null") {
+            console.error("ID inválido en URL:", id);
+            loader.style.display = 'none';
+            errorBox.style.display = 'block';
+            errorText.textContent = "El enlace parece estar roto o incompleto.";
+            return;
+        }
+
+        try {
+            console.log("Intentando cargar novedad con ID:", id);
+
+            // 2. Pedir datos a la API
+            const response = await fetch(`/api/novedades/${id}`);
+            
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: No encontrada`);
+            }
+
+            const novedad = await response.json();
+            
+            if (!novedad) {
+                throw new Error("La API devolvió datos vacíos");
+            }
+
+            // 3. Rellenar textos
+            document.title = `${novedad.titulo} - Labelec Ingeniería`;
+            document.getElementById('novedad-titulo').textContent = novedad.titulo || 'Sin título';
+            document.getElementById('novedad-resumen').textContent = novedad.resumen || '';
+            
+            // Formatear fecha
+            if (novedad.fecha) {
+                const fechaObj = new Date(novedad.fecha);
+                const fechaFormateada = fechaObj.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+                document.getElementById('novedad-fecha').textContent = fechaFormateada;
+            }
+
+            // 4. Formatear cuerpo del texto (respetando párrafos)
+            const cuerpoEl = document.getElementById('novedad-cuerpo');
+            if (novedad.texto) {
+                // Convertir saltos de línea en <p>
+                cuerpoEl.innerHTML = novedad.texto.split('\n').map(p => {
+                    const parrafo = p.trim();
+                    return parrafo ? `<p>${parrafo}</p>` : '';
+                }).join('');
+            } else {
+                cuerpoEl.innerHTML = "<p>Sin contenido.</p>";
+            }
+
+            // 5. Manejo de Imágenes y Galería
+            const rawImgs = novedad.imagen_url || '';
+            // Filtrar strings vacíos
+            const imagenes = rawImgs.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+            if (imagenes.length > 0) {
+                // Procesar ruta de la imagen principal (añadir / si falta)
+                let imgPrincipal = imagenes[0];
+                // Si no empieza con / ni http, le agregamos /
+                if(!imgPrincipal.startsWith('/') && !imgPrincipal.startsWith('http')) {
+                    imgPrincipal = '/' + imgPrincipal;
+                }
+                
+                document.getElementById('novedad-imagen-principal').src = imgPrincipal;
+                // Manejar error de carga de imagen
+                document.getElementById('novedad-imagen-principal').onerror = function() {
+                    this.style.display = 'none';
+                };
+
+                // Si hay más de 1 imagen, armar galería con el resto
+                if (imagenes.length > 1) {
+                    const galeriaContainer = document.getElementById('novedad-galeria-container');
+                    const galeriaGrid = document.getElementById('novedad-galeria-grid');
+                    galeriaContainer.style.display = 'block';
+                    galeriaGrid.innerHTML = ''; // Limpiar por si acaso
+                    
+                    // Recorremos desde la segunda imagen (índice 1)
+                    imagenes.slice(1).forEach(imgUrl => {
+                        if(!imgUrl.startsWith('/') && !imgUrl.startsWith('http')) {
+                            imgUrl = '/' + imgUrl;
+                        }
+                        
+                        const img = document.createElement('img');
+                        img.src = imgUrl;
+                        img.alt = "Galería Labelec";
+                        // Al hacer clic, abrir lightbox
+                        img.onclick = () => openLightbox(imgUrl);
+                        galeriaGrid.appendChild(img);
+                    });
+                }
+            } else {
+                // Si no hay imagen, ocultamos el elemento principal
+                document.getElementById('novedad-imagen-principal').style.display = 'none';
+            }
+
+            // 6. Mostrar contenido final
+            loader.style.display = 'none';
+            content.style.display = 'block';
+
+        } catch (error) {
+            console.error("Error fatal cargando novedad:", error);
+            loader.style.display = 'none';
+            errorBox.style.display = 'block';
+            errorText.textContent = "Hubo un problema al buscar la noticia. Es posible que haya sido eliminada.";
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>

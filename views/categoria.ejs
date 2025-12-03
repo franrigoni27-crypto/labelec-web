@@ -1,0 +1,167 @@
+<%- include('partials/header', { titulo: nombreCategoria + ' - Labelec Ingeniería' }) %>
+
+<style>
+    /* Estilos Layout Categoría */
+    .main-content { display: flex; gap: 40px; padding: 60px 0; align-items: flex-start; }
+    
+    /* Sidebar Filtros */
+    .sidebar { flex: 0 0 250px; position: sticky; top: 100px; }
+    .filter-box { background: white; padding: 25px; border-radius: 8px; box-shadow: var(--sombra-suave); border: 1px solid #eee; }
+    .filter-box h3 { color: var(--color-primario); margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid var(--color-fondo-claro); padding-bottom: 10px; }
+    .filter-list { list-style: none; padding: 0; }
+    .filter-list li { margin-bottom: 10px; }
+    .filter-list label { display: flex; align-items: center; cursor: pointer; font-size: 15px; color: var(--color-secundario); transition: 0.2s; }
+    .filter-list label:hover { color: var(--color-primario); }
+    .filter-list input { margin-right: 10px; accent-color: var(--color-primario); width: 16px; height: 16px; }
+
+    /* Catálogo */
+    .catalog-section { flex: 1; }
+    .catalog-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+    .catalog-header h1 { color: var(--color-primario); font-size: 32px; margin: 0; }
+    .contador-productos { color: var(--color-secundario); font-size: 14px; font-weight: 600; }
+
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 25px; }
+
+    /* Tarjeta (Consistente con otras páginas) */
+    .product-card { 
+        background: white; 
+        border-radius: 12px; 
+        overflow: hidden; 
+        box-shadow: var(--sombra-suave); 
+        border: 1px solid #eee; 
+        display: flex; 
+        flex-direction: column; 
+        transition: transform 0.3s ease; 
+    }
+    .product-card:hover { transform: translateY(-5px); box-shadow: var(--sombra-hover); }
+    .product-card img { 
+        width: 100%; 
+        height: 200px; 
+        object-fit: contain; 
+        padding: 20px; 
+        background: #fff; 
+        border-bottom: 1px solid #f9f9f9; 
+    }
+    .product-card-body { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+    .product-model { font-size: 12px; color: #999; margin-bottom: 5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .product-card h3 { font-size: 18px; margin-bottom: 15px; color: var(--color-primario); line-height: 1.3; }
+    
+    .product-btn { 
+        margin-top: auto; 
+        display: block; 
+        width: 100%; 
+        text-align: center; 
+        border: 1px solid var(--color-primario); 
+        color: var(--color-primario); 
+        padding: 10px 0; 
+        border-radius: 6px; 
+        font-weight: 600; 
+        transition: 0.3s; 
+        font-size: 14px;
+    }
+    .product-btn:hover { background: var(--color-primario); color: white; }
+
+    @media (max-width: 900px) { 
+        .main-content { flex-direction: column; } 
+        .sidebar { width: 100%; position: static; margin-bottom: 30px; } 
+    }
+</style>
+
+<main class="container main-content">
+    
+    <aside class="sidebar">
+        <div class="filter-box">
+            <h3>Filtrar por Solución</h3>
+            <ul class="filter-list">
+                <% if (filtrosDisponibles && filtrosDisponibles.length > 0) { %>
+                    <% filtrosDisponibles.forEach(filtro => { %>
+                        <li>
+                            <label>
+                                <input type="checkbox" value="<%= filtro %>" class="filtro-check"> 
+                                <%= filtro %>
+                            </label>
+                        </li>
+                    <% }) %>
+                <% } else { %>
+                    <li><em style="color:#999; font-size:14px;">No hay filtros disponibles</em></li>
+                <% } %>
+            </ul>
+        </div>
+    </aside>
+
+    <section class="catalog-section">
+        <div class="catalog-header">
+            <h1><%= nombreCategoria %></h1>
+            <span class="contador-productos" id="contador-visible"><%= productos.length %> productos</span>
+        </div>
+        
+        <% if (productos.length > 0) { %>
+            <div class="product-grid">
+                <% productos.forEach(p => { 
+                    // Procesar imagen
+                    let imgs = (p.imagen || '').split(',');
+                    let imgUrl = (imgs[0] && imgs[0].trim()) ? imgs[0].trim() : '/img/favicon.png';
+                    if(!imgUrl.startsWith('/') && !imgUrl.startsWith('http')) imgUrl = '/' + imgUrl;
+                    
+                    // Procesar soluciones para el filtro JS
+                    let dataSoluciones = '';
+                    if(Array.isArray(p.solucionEspecifica)) {
+                        dataSoluciones = p.solucionEspecifica.join(',').toLowerCase();
+                    } else if (p.solucionEspecifica) {
+                        dataSoluciones = p.solucionEspecifica.toLowerCase();
+                    }
+                %>
+                    <div class="product-card" data-soluciones="<%= dataSoluciones %>">
+                        <img src="<%= imgUrl %>" alt="<%= p.nombre %>" onerror="this.src='/img/favicon.png'">
+                        <div class="product-card-body">
+                            <div class="product-model"><%= p.marca %> <%= p.modelo ? '/ ' + p.modelo : '' %></div>
+                            <h3><%= p.nombre %></h3>
+                            <a href="/producto?id=<%= p.id %>" class="product-btn">Ver Detalles</a>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div style="text-align: center; padding: 60px; color: var(--color-secundario);">
+                <h3>No se encontraron productos en esta categoría.</h3>
+                <a href="/#productos" class="product-btn" style="max-width: 200px; margin: 20px auto;">Volver al inicio</a>
+            </div>
+        <% } %>
+    </section>
+
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const checkboxes = document.querySelectorAll('.filtro-check');
+        const tarjetas = document.querySelectorAll('.product-card');
+        const contador = document.getElementById('contador-visible');
+
+        function filtrar() {
+            // 1. Obtener filtros marcados
+            const marcados = Array.from(checkboxes)
+                                  .filter(c => c.checked)
+                                  .map(c => c.value.toLowerCase());
+            
+            let visibles = 0;
+
+            // 2. Mostrar/Ocultar tarjetas
+            tarjetas.forEach(card => {
+                const solucionesData = card.getAttribute('data-soluciones') || '';
+                
+                // Si no hay filtros, mostrar todo. Si hay, debe coincidir al menos uno.
+                const mostrar = marcados.length === 0 || marcados.some(m => solucionesData.includes(m));
+                
+                card.style.display = mostrar ? 'flex' : 'none';
+                if(mostrar) visibles++;
+            });
+
+            // 3. Actualizar contador
+            if(contador) contador.textContent = `${visibles} productos visibles`;
+        }
+
+        checkboxes.forEach(c => c.addEventListener('change', filtrar));
+    });
+</script>
+
+<%- include('partials/footer') %>

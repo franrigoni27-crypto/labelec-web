@@ -1,0 +1,146 @@
+<%- include('partials/header', { titulo: nombreMarca + ' - Labelec Ingeniería' }) %>
+
+<style>
+    /* Estilos específicos para la cabecera de marca */
+    .category-header { 
+        background-color: var(--color-fondo); 
+        padding: 40px 0; 
+        border-bottom: 1px solid #eee; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 30px; 
+        flex-wrap: wrap;
+    }
+    .brand-logo { 
+        max-height: 80px; /* Un poco más grande para destacar */
+        width: auto; 
+        object-fit: contain;
+    }
+    .breadcrumbs { font-size: 14px; color: var(--color-secundario); }
+    .breadcrumbs a { color: var(--color-primario); text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+
+    .product-list-container { padding: 60px 0; background-color: var(--color-fondo-claro); }
+    .product-list-grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+        gap: 25px; 
+    }
+    
+    /* Tarjeta de Producto (Reutilizando estilos pero asegurando consistencia) */
+    .product-item-card { 
+        background-color: #fff; 
+        border-radius: 12px; 
+        border: none; 
+        box-shadow: var(--sombra-suave); 
+        overflow: hidden; 
+        display: flex; 
+        flex-direction: column; 
+        transition: all 0.3s ease-in-out; 
+    }
+    .product-item-card:hover { transform: translateY(-5px); box-shadow: var(--sombra-hover); }
+    .product-item-image { 
+        width: 100%; 
+        height: 220px; 
+        object-fit: contain; 
+        padding: 20px;
+        background-color: #fff;
+        border-bottom: 1px solid #eee; 
+    }
+    .product-item-content { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+    .product-item-content h3 { font-size: 18px; color: var(--color-primario); line-height: 1.4; margin-bottom: 5px; }
+    .product-item-content p { font-size: 13px; color: #666; margin-bottom: 15px; flex-grow: 1; font-weight: 600; }
+    
+    .cta-button-cotizar { 
+        display: block; width: 100%; text-align: center; 
+        background-color: var(--color-acento-venta); color: white; 
+        padding: 10px 15px; text-decoration: none; font-weight: 600; 
+        border-radius: 5px; font-size: 14px; transition: all 0.3s ease; 
+    }
+    .cta-button-cotizar:hover { background-color: #3aa3d6; transform: scale(1.02); }
+    
+    /* Mensaje de "No encontrado" */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--color-secundario);
+    }
+    .btn-volver {
+        display: inline-block;
+        margin-top: 20px;
+        color: var(--color-primario);
+        border: 1px solid var(--color-primario);
+        padding: 8px 20px;
+        border-radius: 4px;
+        text-decoration: none;
+    }
+    .btn-volver:hover { background-color: var(--color-primario); color: #fff; }
+</style>
+
+<main>
+
+    <section class="category-header">
+        <div class="container" style="display: flex; align-items: center; gap: 20px; justify-content: center; flex-wrap: wrap;">
+            
+            <img src="/img/marcas/<%= nombreMarcaSlug %>.png" 
+                 alt="Logo <%= nombreMarca %>" 
+                 class="brand-logo"
+                 onerror="this.style.display='none'; document.getElementById('marca-titulo').style.display='block';">
+            
+            <h1 id="marca-titulo" style="display:none; font-size: 40px; color: var(--color-primario); margin:0;">
+                <%= nombreMarca %>
+            </h1>
+
+            <div style="width: 100%; text-align: center; margin-top: 10px;">
+                <div class="breadcrumbs">
+                    <a href="/">Inicio</a> > <a href="/#marcas">Marcas</a> > <b><%= nombreMarca %></b>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="product-list-container">
+        <div class="container">
+            
+            <% if (productos && productos.length > 0) { %>
+                <div class="product-list-grid" id="product-list-grid">
+                    <% productos.forEach(producto => { 
+                        // Procesamiento de imágenes seguro
+                        let imgs = (producto.imagen || '').split(',');
+                        let imgUrl = (imgs[0] && imgs[0].trim()) ? imgs[0].trim() : '/img/favicon.png';
+                        
+                        // Corrección de ruta absoluta si es necesario
+                        if (!imgUrl.startsWith('/') && !imgUrl.startsWith('http')) {
+                            imgUrl = '/' + imgUrl;
+                        }
+                    %>
+                        <div class="product-item-card">
+                            <img src="<%= imgUrl %>" 
+                                 alt="<%= producto.nombre %>" 
+                                 class="product-item-image" 
+                                 onerror="this.src='/img/favicon.png'">
+                            
+                            <div class="product-item-content">
+                                <h3><%= producto.nombre %></h3>
+                                <p><%= producto.modelo || producto.marca %></p> <a href="/producto?id=<%= producto.id %>" class="cta-button-cotizar">
+                                    Ver Detalles
+                                </a>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <h2>No se encontraron productos de <%= nombreMarca %></h2>
+                    <p>Actualmente no tenemos productos cargados para esta marca en el catálogo online.</p>
+                    <a href="/#marcas" class="btn-volver">← Ver otras marcas</a>
+                </div>
+            <% } %>
+
+        </div>
+    </section>
+
+</main>
+
+<%- include('partials/footer') %>

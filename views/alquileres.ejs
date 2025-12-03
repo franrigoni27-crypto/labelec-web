@@ -1,0 +1,240 @@
+<%- include('partials/header', { titulo: 'Alquileres - Labelec Ingeniería' }) %>
+
+<style>
+    /* --- Estilos base (Mismos de antes) --- */
+    .category-header { background-color: var(--color-fondo); padding: 40px 0 25px 0; border-bottom: 1px solid #eee; }
+    .breadcrumbs { font-size: 14px; color: var(--color-secundario); }
+    .breadcrumbs a { color: var(--color-primario); text-decoration: none; }
+    .category-header h1 { font-size: 36px; margin-top: 10px; }
+    .page-description { font-size: 17px; font-weight: 400; color: var(--color-secundario); max-width: 900px; line-height: 1.7; margin-bottom: 15px; }
+    
+    .specialties-container { padding: 60px 0; background-color: var(--color-fondo); }
+    .specialties-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+    .specialty-col { background-color: var(--color-fondo-claro); padding: 30px; border-radius: 8px; border-left: 5px solid var(--color-primario); }
+    .specialty-col h3 { font-size: 24px; color: var(--color-primario); margin-bottom: 20px; }
+    .specialty-col ul { list-style-type: '✓ '; padding-left: 25px; color: var(--color-secundario); }
+    .specialty-col li { margin-bottom: 10px; padding-left: 10px; }
+
+    .product-list-container { padding: 60px 0; background-color: var(--color-fondo-claro); }
+    .product-list-container h2 { font-size: 32px; text-align: center; margin-bottom: 40px; color: var(--color-primario); }
+    .product-list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+    .product-item-card { background-color: #fff; border-radius: 12px; box-shadow: var(--sombra-suave); overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s ease-in-out; }
+    .product-item-card:hover { transform: translateY(-5px); box-shadow: var(--sombra-hover); }
+    .product-item-image { width: 100%; height: 180px; object-fit: contain; padding: 15px; background: white; border-bottom: 1px solid #eee; }
+    .product-item-content { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+    .product-item-content h3 { font-size: 18px; color: var(--color-primario); line-height: 1.3; margin-bottom: 10px; }
+    .product-item-content p { font-size: 14px; margin-bottom: 15px; flex-grow: 1; color: var(--color-secundario); }
+    
+    .cta-button-consultar { display: block; width: 100%; text-align: center; background-color: var(--color-primario); color: white; padding: 10px 15px; text-decoration: none; font-weight: 600; border-radius: 5px; font-size: 14px; transition: all 0.3s ease; cursor: pointer; border: none; }
+    .cta-button-consultar:hover { background-color: #0d5a8a; transform: scale(1.02); }
+
+    /* --- ESTILOS DEL MODAL (POP-UP) --- */
+    .modal-overlay {
+        display: none; /* Oculto por defecto */
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6); z-index: 2000;
+        justify-content: center; align-items: center;
+        padding: 20px;
+    }
+    .modal-content {
+        background: white; width: 100%; max-width: 500px;
+        padding: 30px; border-radius: 12px; position: relative;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from {transform: translateY(20px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
+    
+    .close-modal { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #999; }
+    .close-modal:hover { color: #333; }
+    
+    .modal-form label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px; }
+    .modal-form input, .modal-form textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; font-family: 'Exo 2.0', sans-serif; }
+    .btn-enviar-modal { width: 100%; padding: 12px; background: var(--color-acento-servicio); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    .btn-enviar-modal:hover { background: #82b240; }
+    
+    #modal-status { margin-top: 10px; text-align: center; font-size: 14px; min-height: 20px; }
+</style>
+
+<main>
+    <section class="category-header">
+        <div class="container">
+            <div class="breadcrumbs"><a href="/">Inicio</a> > <b>Alquileres</b></div>
+            <h1>Alquileres</h1>
+            <p class="page-description">Comenzamos con Alquileres Domiciliarios hace ya más de 20 años... Hoy gestionamos más de 1.000 terapias en la región.</p>
+            <p class="page-description">Ofrecemos soluciones sólidas desde lo operativo y logístico, con un verdadero diferencial humano.</p>
+        </div>
+    </section>
+
+    <section class="specialties-container">
+        <div class="container">
+            <div class="specialties-grid">
+                <div class="specialty-col">
+                    <h3>TMD "Home Care"</h3>
+                    <ul>
+                        <li>Concentradores de Oxígeno</li>
+                        <li>CPAP / BiPAP</li>
+                        <li>Bombas de infusión</li>
+                        <li>Aspirador de secreciones</li>
+                        <li>Camas ortopédicas</li>
+                        <li>Sillas de ruedas</li>
+                    </ul>
+                </div>
+                <div class="specialty-col">
+                    <h3>Alquiler Hospitalario</h3>
+                    <ul>
+                        <li>Respiradores de UTI</li>
+                        <li>Monitores multiparamétricos</li>
+                        <li>Incubadoras</li>
+                        <li>Bombas de infusión</li>
+                        <li>Desfibriladores</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="product-list-container">
+        <div class="container">
+            <h2>Equipos Disponibles</h2>
+            <div class="product-list-grid">
+                
+                <div class="product-item-card">
+                    <img src="/img/alquiler/pb560.jpg" alt="Respirador Puritan Bennet 560" class="product-item-image" onerror="this.src='/img/favicon.png'">
+                    <div class="product-item-content">
+                        <h3>Respirador Puritan Bennet 560</h3>
+                        <p>Ventilación portátil para cuidados domiciliarios.</p>
+                        <button class="cta-button-consultar" onclick="abrirModal('Respirador Puritan Bennet 560')">Consultar Disponibilidad</button>
+                    </div>
+                </div>
+
+                <div class="product-item-card">
+                    <img src="/img/alquiler/concentrador.jpg" alt="Concentrador de Oxígeno" class="product-item-image" onerror="this.src='/img/favicon.png'">
+                    <div class="product-item-content">
+                        <h3>Concentrador de Oxígeno</h3>
+                        <p>Equipos estacionarios de bajo flujo.</p>
+                        <button class="cta-button-consultar" onclick="abrirModal('Concentrador de Oxígeno')">Consultar Disponibilidad</button>
+                    </div>
+                </div>
+
+                <div class="product-item-card">
+                    <img src="/img/alquiler/resmed-air10.jpg" alt="CPAP Resmed Airsense 10" class="product-item-image" onerror="this.src='/img/favicon.png'">
+                    <div class="product-item-content">
+                        <h3>CPAP Resmed Airsense 10</h3>
+                        <p>Tratamiento de apnea del sueño.</p>
+                        <button class="cta-button-consultar" onclick="abrirModal('CPAP Resmed Airsense 10')">Consultar Disponibilidad</button>
+                    </div>
+                </div>
+
+                <div class="product-item-card">
+                    <img src="/img/alquiler/kangaroo.jpg" alt="Bomba Kangaroo ePump" class="product-item-image" onerror="this.src='/img/favicon.png'">
+                    <div class="product-item-content">
+                        <h3>Bomba Kangaroo ePump</h3>
+                        <p>Bomba de infusión enteral.</p>
+                        <button class="cta-button-consultar" onclick="abrirModal('Bomba Kangaroo ePump')">Consultar Disponibilidad</button>
+                    </div>
+                </div>
+
+                </div>
+        </div>
+    </section>
+</main>
+
+<div id="modal-alquiler" class="modal-overlay">
+    <div class="modal-content">
+        <span class="close-modal" onclick="cerrarModal()">&times;</span>
+        <h3 style="color: var(--color-primario); margin-bottom: 5px;">Consultar Alquiler</h3>
+        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">Equipo: <strong id="modal-equipo-nombre"></strong></p>
+        
+        <form class="modal-form" id="form-alquiler">
+            <input type="hidden" id="alq-equipo" name="equipo">
+            
+            <label>Nombre y Apellido *</label>
+            <input type="text" id="alq-nombre" required>
+            
+            <label>Teléfono de Contacto *</label>
+            <input type="tel" id="alq-telefono" required>
+            
+            <label>Email *</label>
+            <input type="email" id="alq-email" required>
+            
+            <label>Duración estimada (días/meses)</label>
+            <input type="text" id="alq-duracion" placeholder="Ej: 15 días">
+            
+            <label>Comentarios / Obra Social</label>
+            <textarea id="alq-mensaje" rows="2"></textarea>
+            
+            <p id="modal-status"></p>
+            <button type="submit" class="btn-enviar-modal" id="btn-alq-enviar">Enviar Consulta</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('modal-alquiler');
+    const equipoInput = document.getElementById('alq-equipo');
+    const equipoVisual = document.getElementById('modal-equipo-nombre');
+    const form = document.getElementById('form-alquiler');
+    const status = document.getElementById('modal-status');
+    const btn = document.getElementById('btn-alq-enviar');
+
+    function abrirModal(nombreEquipo) {
+        equipoInput.value = nombreEquipo;
+        equipoVisual.textContent = nombreEquipo;
+        modal.style.display = 'flex';
+        status.textContent = '';
+    }
+
+    function cerrarModal() {
+        modal.style.display = 'none';
+    }
+
+    // Cerrar si hace clic afuera
+    window.onclick = function(event) {
+        if (event.target == modal) cerrarModal();
+    }
+
+    // Envío del Formulario
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const datos = {
+            nombre: document.getElementById('alq-nombre').value,
+            telefono: document.getElementById('alq-telefono').value,
+            email: document.getElementById('alq-email').value,
+            duracion: document.getElementById('alq-duracion').value,
+            mensaje: document.getElementById('alq-mensaje').value,
+            equipo: equipoInput.value
+        };
+
+        btn.disabled = true;
+        btn.textContent = "Enviando...";
+        status.style.color = "#666";
+        status.textContent = "";
+
+        try {
+            const res = await fetch('/api/alquiler', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                status.style.color = "green";
+                status.textContent = "✅ ¡Consulta enviada! Te contactaremos pronto.";
+                form.reset();
+                setTimeout(() => { cerrarModal(); btn.disabled = false; btn.textContent = "Enviar Consulta"; }, 3000);
+            } else {
+                throw new Error("Error del servidor");
+            }
+        } catch (error) {
+            console.error(error);
+            status.style.color = "red";
+            status.textContent = "❌ Error al enviar. Intenta de nuevo.";
+            btn.disabled = false;
+            btn.textContent = "Enviar Consulta";
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Labelec</title>
+    <link rel="icon" href="/img/favicon.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root { --color-primario: #1073AC; --color-acento: #96C94D; --bg: #f4f6f8; --danger: #e74c3c; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Exo 2.0', sans-serif; background-color: var(--bg); display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { width: 250px; background: var(--color-primario); color: white; padding: 20px; position: fixed; height: 100%; overflow-y: auto; z-index: 100; }
+        .sidebar h2 { margin-bottom: 40px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+        .menu-btn { display: block; width: 100%; padding: 15px; background: none; border: none; color: white; text-align: left; cursor: pointer; font-size: 16px; transition: 0.3s; border-radius: 5px; margin-bottom: 5px; }
+        .menu-btn:hover, .menu-btn.active { background: rgba(255,255,255,0.2); font-weight: bold; }
+        .menu-btn i { margin-right: 10px; width: 20px; }
+        
+        /* Contenido */
+        .main-content { margin-left: 250px; flex: 1; padding: 40px; }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s; }
+        
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: 1 / -1; }
+        
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; font-size: 14px; }
+        input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; font-family: inherit; }
+        
+        /* GRID DE ESPECIALIDADES (Checkboxes) */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            padding: 15px;
+            background: #fcfcfc;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .cat-option {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            cursor: pointer;
+            color: #444;
+        }
+        .cat-option input {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--color-primario);
+            margin-bottom: 0;
+        }
+
+        /* Zona de Arrastre */
+        .drop-zone {
+            border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center;
+            cursor: pointer; transition: 0.3s; background: #fafafa; margin-bottom: 15px;
+        }
+        .drop-zone:hover, .drop-zone.dragover { border-color: var(--color-primario); background: #eef7ff; }
+        .drop-zone p { margin: 0; color: #666; font-size: 14px; pointer-events: none; }
+        
+        /* Previsualización de Imágenes */
+        .preview-container { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .preview-item { position: relative; width: 80px; height: 80px; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; background: #fff; }
+        .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-item .btn-remove {
+            position: absolute; top: 2px; right: 2px;
+            background: rgba(231, 76, 60, 0.9); color: white;
+            border: none; border-radius: 50%; width: 20px; height: 20px;
+            cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;
+        }
+
+        .btn-submit { background: var(--color-acento); color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; transition: 0.3s; }
+        .btn-submit:hover { background: #7ab635; }
+        .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* Tablas */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        th { background-color: #f9f9f9; color: var(--color-primario); }
+        .thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+        
+        /* Botones Acción */
+        .btn-action {
+            display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px;
+            border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; margin-right: 5px;
+        }
+        .btn-edit { background-color: #e3f2fd; color: var(--color-primario); }
+        .btn-edit:hover { background-color: #bbdefb; }
+        .btn-delete { background-color: #ffebee; color: var(--danger); }
+        .btn-delete:hover { background-color: #ffcdd2; }
+
+        .status-msg { text-align: center; margin-top: 15px; font-weight: bold; min-height: 20px; padding: 10px; border-radius: 5px; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <h2><i class="fas fa-rocket"></i> Labelec Admin</h2>
+        <button class="menu-btn active" onclick="showSection('productos')"><i class="fas fa-box"></i> Productos</button>
+        <button class="menu-btn" onclick="showSection('novedades')"><i class="fas fa-newspaper"></i> Novedades</button>
+        <button class="menu-btn" onclick="showSection('eventos')"><i class="fas fa-calendar-alt"></i> Eventos</button>
+        <div style="margin-top: 50px;">
+            <a href="/auth/logout" class="menu-btn" style="background:var(--danger); text-align:center;">Cerrar Sesión</a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        
+        <div id="productos" class="section active">
+            <h1>Gestión de Productos</h1>
+            <div class="card">
+                <h3>Nuevo / Editar Producto</h3>
+                <form id="form-producto">
+                    <input type="hidden" name="edit_id" id="prod_edit_id">
+                    <div class="form-grid">
+                        <div><label>ID Único (URL)</label><input type="text" name="id" id="prod_id" required placeholder="ej: monitor-mindray"></div>
+                        <div><label>Nombre Comercial</label><input type="text" name="nombre" id="prod_nombre" required></div>
+                        <div><label>Marca</label><input type="text" name="marca" id="prod_marca" required></div>
+                        <div><label>Modelo</label><input type="text" name="modelo" id="prod_modelo"></div>
+                        
+                        <div class="full-width">
+                            <label style="color: var(--color-primario); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">
+                                1. Especialidades (¿En qué páginas aparecerá?)
+                            </label>
+                            <div class="category-grid">
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Anestesia"> Anestesia</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Audiología y Equilibrio"> Audiología y Equilibrio</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Cardiología"> Cardiología</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Cirugía - Quirófano"> Cirugía - Quirófano</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Cirugía Cardiovascular"> Cirugía Cardiovascular</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Clínica y Diagnostico"> Clínica y Diagnostico</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Cuidado de Heridas"> Cuidado de Heridas</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Cuidados Críticos"> Cuidados Críticos</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Cuidados Domiciliarios"> Cuidados Domiciliarios</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Emergencia y Traslado"> Emergencia y Traslado</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Kinesiología Respiratoria"> Kinesiología Respiratoria</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Neonatología"> Neonatología</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Neumonología"> Neumonología</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Neurología"> Neurología</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Nutrición"> Nutrición</label>
+                                <label class="cat-option"><input type="checkbox" name="cat_check" value="Ostomía e Incontinencia"> Ostomía e Incontinencia</label>
+                            </div>
+                        </div>
+
+                        <div class="full-width">
+                            <label style="color: var(--color-primario);">2. Filtros / Soluciones (Menú lateral)</label>
+                            <input type="text" name="soluciones" id="prod_soluciones" placeholder="Ej: Bombas TCI, Monitoreo, Ventiladores (Separar con coma)">
+                        </div>
+
+                        <div class="full-width"><label>Descripción</label><textarea name="descripcion" id="prod_descripcion" rows="2"></textarea></div>
+                        
+                        <div class="full-width">
+                            <label>Imágenes</label>
+                            <div class="drop-zone" id="drop-producto">
+                                <p><i class="fas fa-cloud-upload-alt"></i> Arrastra imágenes aquí o haz click (Acumulativo)</p>
+                                <input type="file" id="file-producto" multiple accept="image/*" style="display:none">
+                            </div>
+                            <div class="preview-container" id="preview-producto"></div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">Guardar Producto</button>
+                    <p class="status-msg" id="status-producto"></p>
+                </form>
+            </div>
+            
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Img</th>
+                                <th>Nombre</th>
+                                <th>Marca</th>
+                                <th>Modelo</th> <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% productos.forEach(p => { %>
+                            <tr>
+                                <td><img src="<%= p.imagen ? p.imagen.split(',')[0] : '/img/favicon.png' %>" class="thumb"></td>
+                                <td><%= p.nombre %></td>
+                                <td><%= p.marca %></td>
+                                <td><%= p.modelo %></td> <td>
+                                    <button class="btn-action btn-edit" onclick="editarProducto('<%= p._id %>')">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </button>
+                                    <button class="btn-action btn-delete" onclick="borrarItem('/admin/productos/delete/<%= p._id %>')">
+                                        <i class="fas fa-trash"></i> Borrar
+                                    </button>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="novedades" class="section">
+            <h1>Gestión de Novedades</h1>
+            <div class="card">
+                <form id="form-novedad">
+                    <input type="hidden" name="edit_id" id="nov_edit_id">
+                    <label>Título</label><input type="text" name="titulo" id="nov_titulo" required>
+                    <label>Resumen</label><input type="text" name="resumen" id="nov_resumen" required>
+                    <label>Texto Completo</label><textarea name="texto" id="nov_texto" rows="4" required></textarea>
+                    
+                    <div class="full-width">
+                        <label>Imágenes</label>
+                        <div class="drop-zone" id="drop-novedad">
+                            <p><i class="fas fa-cloud-upload-alt"></i> Arrastra imágenes aquí</p>
+                            <input type="file" id="file-novedad" multiple accept="image/*" style="display:none">
+                        </div>
+                        <div class="preview-container" id="preview-novedad"></div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Guardar Noticia</button>
+                    <p class="status-msg" id="status-novedad"></p>
+                </form>
+            </div>
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Img</th><th>Título</th><th>Acciones</th></tr></thead>
+                        <tbody>
+                            <% novedades.forEach(n => { %>
+                            <tr>
+                                <td><img src="<%= n.imagen_url ? n.imagen_url.split(',')[0] : '/img/favicon.png' %>" class="thumb"></td>
+                                <td><%= n.titulo %></td>
+                                <td>
+                                    <button class="btn-action btn-edit" onclick="editarNovedad('<%= n._id %>')"><i class="fas fa-edit"></i> Editar</button>
+                                    <button class="btn-action btn-delete" onclick="borrarItem('/admin/novedades/delete/<%= n._id %>')"><i class="fas fa-trash"></i> Borrar</button>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="eventos" class="section">
+            <h1>Gestión de Eventos</h1>
+            <div class="card">
+                <form id="form-evento">
+                    <input type="hidden" name="edit_id" id="evt_edit_id">
+                    <div class="form-grid">
+                        <div><label>Título</label><input type="text" name="titulo" id="evt_titulo" required></div>
+                        <div><label>Fecha</label><input type="text" name="fecha_texto" id="evt_fecha" required></div>
+                        <div class="full-width"><label>Ubicación</label><input type="text" name="ubicacion" id="evt_ubicacion"></div>
+                        <div class="full-width"><label>Subtítulo</label><textarea name="subtitulo" id="evt_subtitulo"></textarea></div>
+                        
+                        <div class="full-width">
+                            <label>Imágenes</label>
+                            <div class="drop-zone" id="drop-evento">
+                                <p><i class="fas fa-cloud-upload-alt"></i> Arrastra imágenes aquí</p>
+                                <input type="file" id="file-evento" multiple accept="image/*" style="display:none">
+                            </div>
+                            <div class="preview-container" id="preview-evento"></div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">Guardar Evento</button>
+                    <p class="status-msg" id="status-evento"></p>
+                </form>
+            </div>
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Img</th><th>Evento</th><th>Acciones</th></tr></thead>
+                        <tbody>
+                            <% eventos.forEach(e => { %>
+                            <tr>
+                                <td><img src="<%= e.imagen_url ? e.imagen_url.split(',')[0] : '/img/favicon.png' %>" class="thumb"></td>
+                                <td><%= e.titulo %></td>
+                                <td>
+                                    <button class="btn-action btn-edit" onclick="editarEvento('<%= e._id %>')"><i class="fas fa-edit"></i> Editar</button>
+                                    <button class="btn-action btn-delete" onclick="borrarItem('/admin/eventos/delete/<%= e._id %>')"><i class="fas fa-trash"></i> Borrar</button>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const DATA_PRODUCTOS = <%- JSON.stringify(productos) %>;
+        const DATA_NOVEDADES = <%- JSON.stringify(novedades) %>;
+        const DATA_EVENTOS = <%- JSON.stringify(eventos) %>;
+    </script>
+
+    <script>
+        // --- 1. NAVEGACIÓN ---
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        function resetForm(id) {
+            document.getElementById(id).reset();
+            document.querySelector(`#${id} input[type="hidden"]`).value = '';
+            
+            const tipo = id.split('-')[1]; 
+            colasDeArchivos[tipo] = [];
+            document.getElementById(`preview-${tipo}`).innerHTML = ''; 
+            
+            if(tipo === 'producto') {
+                document.querySelectorAll('input[name="cat_check"]').forEach(c => c.checked = false);
+            }
+        }
+
+        // --- 2. SISTEMA DE ARCHIVOS ACUMULATIVO ---
+        const colasDeArchivos = { 'producto': [], 'novedad': [], 'evento': [] };
+
+        function setupUploader(tipo) {
+            const dropZone = document.getElementById(`drop-${tipo}`);
+            const input = document.getElementById(`file-${tipo}`);
+            const previewContainer = document.getElementById(`preview-${tipo}`);
+
+            dropZone.addEventListener('click', (e) => { if(e.target !== input) input.click(); });
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault(); dropZone.classList.remove('dragover');
+                agregarArchivos(e.dataTransfer.files, tipo, previewContainer);
+            });
+
+            input.addEventListener('change', () => {
+                agregarArchivos(input.files, tipo, previewContainer);
+                input.value = ''; 
+            });
+        }
+
+        function agregarArchivos(files, tipo, container) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    colasDeArchivos[tipo].push(file);
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const div = document.createElement('div');
+                        div.className = 'preview-item';
+                        div.innerHTML = `<img src="${e.target.result}"><button type="button" class="btn-remove"><i class="fas fa-times"></i></button>`;
+                        div.querySelector('.btn-remove').onclick = () => {
+                            const idx = colasDeArchivos[tipo].indexOf(file);
+                            if (idx > -1) colasDeArchivos[tipo].splice(idx, 1);
+                            div.remove();
+                        };
+                        container.appendChild(div);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        setupUploader('producto');
+        setupUploader('novedad');
+        setupUploader('evento');
+
+        // --- 3. ENVÍO DE DATOS ---
+        async function conectarFormulario(tipo, urlApi) {
+            const form = document.getElementById(`form-${tipo}`);
+            const status = document.getElementById(`status-${tipo}`);
+            const btn = form.querySelector('button[type="submit"]');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+
+                if (tipo === 'producto') {
+                    const cats = [];
+                    form.querySelectorAll('input[name="cat_check"]:checked').forEach(c => cats.push(c.value));
+                    formData.set('categoria', cats.join(', '));
+                }
+
+                formData.delete('imagenes'); 
+                const archivos = colasDeArchivos[tipo];
+                if (archivos.length > 0) {
+                    archivos.forEach(f => formData.append('imagenes', f));
+                }
+
+                btn.disabled = true;
+                btn.innerText = "Subiendo...";
+                status.style.color = "#666";
+                status.innerText = "Procesando...";
+
+                try {
+                    const res = await fetch(urlApi, { method: 'POST', body: formData });
+                    const contentType = res.headers.get("content-type");
+                    if (!contentType || !contentType.includes("application/json")) throw new Error("Error en servidor. Verifica conexión/Cloudinary.");
+                    const data = await res.json();
+
+                    if (data.success) {
+                        status.style.color = "green";
+                        status.innerText = "✅ ¡Guardado con éxito! Recargando...";
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        throw new Error(data.message || "Error desconocido");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    status.style.color = "red";
+                    status.innerText = "❌ " + error.message;
+                    btn.disabled = false;
+                    btn.innerText = "Reintentar";
+                }
+            });
+        }
+
+        conectarFormulario('producto', '/admin/productos');
+        conectarFormulario('novedad', '/admin/novedades');
+        conectarFormulario('evento', '/admin/eventos');
+
+        // --- 4. UTILIDADES ---
+        async function borrarItem(url) {
+            if (!confirm("¿Eliminar este ítem?")) return;
+            try {
+                await fetch(url, { method: 'POST' });
+                window.location.reload();
+            } catch (e) { alert("Error"); }
+        }
+
+        function editarProducto(id) {
+            resetForm('form-producto');
+            const p = DATA_PRODUCTOS.find(item => item._id === id);
+            if(!p) return alert("Error al cargar producto");
+
+            document.getElementById('prod_edit_id').value = p._id;
+            document.getElementById('prod_id').value = p.id;
+            document.getElementById('prod_nombre').value = p.nombre;
+            document.getElementById('prod_marca').value = p.marca;
+            document.getElementById('prod_modelo').value = p.modelo;
+            document.getElementById('prod_descripcion').value = p.descripcion;
+            
+            const soluciones = p.solucionEspecifica || [];
+            document.getElementById('prod_soluciones').value = Array.isArray(soluciones) ? soluciones.join(', ') : soluciones;
+
+            const categoriasDB = p.categoria || [];
+            const catArray = Array.isArray(categoriasDB) ? categoriasDB : (typeof categoriasDB === 'string' ? categoriasDB.split(',').map(s=>s.trim()) : []);
+            
+            catArray.forEach(cat => {
+                const chk = document.querySelector(`input[name="cat_check"][value="${cat}"]`);
+                if(chk) chk.checked = true;
+            });
+
+            colasDeArchivos['producto'] = [];
+            document.getElementById('preview-producto').innerHTML = '<small style="color:#1073AC">Edición: Las nuevas imágenes se añadirán.</small>';
+            window.scrollTo(0, 0);
+        }
+
+        function editarNovedad(id) {
+            resetForm('form-novedad');
+            const n = DATA_NOVEDADES.find(item => item._id === id);
+            if(!n) return alert("Error al cargar novedad");
+
+            document.getElementById('nov_edit_id').value = n._id;
+            document.getElementById('nov_titulo').value = n.titulo;
+            document.getElementById('nov_resumen').value = n.resumen;
+            document.getElementById('nov_texto').value = n.texto;
+            window.scrollTo(0, 0);
+        }
+
+        function editarEvento(id) {
+            resetForm('form-evento');
+            const e = DATA_EVENTOS.find(item => item._id === id);
+            if(!e) return alert("Error al cargar evento");
+
+            document.getElementById('evt_edit_id').value = e._id;
+            document.getElementById('evt_titulo').value = e.titulo;
+            document.getElementById('evt_fecha').value = e.fecha_texto;
+            document.getElementById('evt_ubicacion').value = e.ubicacion;
+            document.getElementById('evt_subtitulo').value = e.subtitulo;
+            window.scrollTo(0, 0);
+        }
+    </script>
+
+</body>
+</html>

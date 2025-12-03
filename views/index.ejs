@@ -1,0 +1,550 @@
+<%- include('partials/header', { titulo: 'Inicio - Labelec Ingeniería' }) %>
+
+<style>
+    /* --- Estilos específicos del Index --- */
+    .hero { 
+        background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/img/imagen-principal.png');
+        background-size: cover; 
+        background-position: center; 
+        min-height: 90vh; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: flex-start; 
+        align-items: center; 
+        text-align: center; 
+        padding: 0; 
+        
+        /* Espacio arriba para ver la imagen de fondo antes de la barra blanca */
+        padding-top: 80px; 
+        padding-bottom: 50px;
+    }
+
+    /* --- Barra blanca --- */
+    .logo-banner {
+        width: 100%;
+        
+        /* Fondo blanco puro (esto elimina cualquier transparencia oscura de atrás) */
+        background-color: white; 
+        
+        /* Altura fija del rectángulo */
+        height: 120px; 
+        
+        display: flex; 
+        justify-content: center;
+        align-items: center;
+        
+        margin-bottom: 50px; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        
+        /* Padding vertical 0 para que la imagen toque los bordes si es necesario */
+        padding: 0;
+    }
+    
+    .logo-banner img {
+        /* La imagen ocupa exactamente la misma altura que el rectángulo */
+        height: 100%; 
+        width: auto;
+        
+        /* Asegura que la imagen no se deforme */
+        object-fit: contain; 
+        
+        /* Fondo transparente para la imagen en sí */
+        background-color: transparent;
+        display: block;
+    }
+
+    /* --- Contenedor para el contenido del hero --- */
+    .hero-content {
+        padding: 0 20px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hero h1 { color: white; font-size: 52px; margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    .hero p { font-size: 22px; max-width: 700px; margin: 0 auto 30px auto; font-weight: 400; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+    .hero-buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin-top: 30px; }
+    
+    /* Botones */
+    .cta-button { display: inline-block; padding: 15px 30px; text-decoration: none; font-weight: 600; border-radius: 5px; font-size: 18px; transition: all 0.3s ease; border: none; }
+    .cta-button-azul { background-color: var(--color-acento-venta); color: white; }
+    .cta-button-azul:hover { background-color: #3aa3d6; transform: scale(1.02); }
+    .cta-button-verde { background-color: var(--color-acento-servicio); color: white; }
+    .cta-button-verde:hover { background-color: #82b240; transform: scale(1.02); }
+    .cta-button-azul-oscuro { background-color: var(--color-primario); color: white; }
+    .cta-button-azul-oscuro:hover { background-color: #0d5a8a; transform: scale(1.02); }
+    
+    /* Buscador */
+    .search-container { position: relative; width: 100%; max-width: 600px; margin: 20px auto 30px auto; }
+    #search-input { width: 100%; padding: 18px 25px; font-size: 16px; border: none; border-radius: 50px; font-family: 'Exo 2.0', sans-serif; box-shadow: var(--sombra-suave); font-weight: 400; }
+    #search-input:focus { outline: none; box-shadow: var(--sombra-hover); }
+    #search-results { position: absolute; width: 100%; background-color: white; border-radius: 8px; box-shadow: var(--sombra-hover); margin-top: 5px; overflow: hidden; z-index: 10; display: none; text-align: left; }
+    #search-results a { display: block; padding: 12px 20px; text-decoration: none; color: var(--color-texto); font-weight: 400; }
+    #search-results a:hover { background-color: var(--color-fondo-claro); color: var(--color-primario); }
+    
+    /* Layout general */
+    .linea-directa { padding: 40px 0 0 0; background-color: var(--color-fondo-claro); text-align: center; }
+    .linea-directa h3 { font-size: 20px; font-weight: 400; color: var(--color-secundario); }
+    .linea-directa h3 strong { font-weight: 600; color: var(--color-primario); }
+    
+    .productos { padding: 80px 0; padding-top: 40px; background-color: transparent; }
+    .productos h2 { text-align: center; font-size: 36px; }
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 40px; }
+    .product-card { border: none; border-radius: 10px; overflow: hidden; background-color: white; box-shadow: var(--sombra-suave); transition: all 0.3s ease-in-out; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: var(--sombra-hover); }
+    .product-card img { width: 100%; height: 200px; object-fit: cover; }
+    .product-card-content { padding: 25px; }
+    .product-card-content h3 { font-size: 20px; color: var(--color-primario); }
+    .product-card-content p { font-size: 14px; margin-bottom: 20px; font-weight: 400; }
+    
+    .cta-button-secundario { background-color: transparent; color: var(--color-primario); border: 2px solid var(--color-primario); padding: 10px 20px; text-decoration: none; font-weight: 600; border-radius: 5px; transition: all 0.3s ease; font-size: 15px; display: inline-block; }
+    .cta-button-secundario:hover { background-color: var(--color-primario); color: white; }
+    
+    .nosotros { padding: 80px 0; background-color: var(--color-fondo); box-shadow: var(--sombra-suave); }
+    .nosotros h2 { font-size: 36px; }
+    .nosotros-content { display: flex; align-items: flex-start; gap: 50px; }
+    .nosotros-text { flex: 1; }
+    .nosotros-text p { font-size: 16px; line-height: 1.7; }
+    .nosotros-imagen { flex: 1; max-width: 500px; margin-top: 10px; }
+    .nosotros-imagen img { width: 100%; border-radius: 8px; }
+    
+    .compromisos-lista { list-style-type: '✓ '; padding-left: 25px; font-size: 16px; font-weight: 400; color: var(--color-secundario); margin-top: 20px; }
+    .compromisos-lista li { margin-bottom: 10px; padding-left: 10px; line-height: 1.7; }
+    
+    .marcas { padding: 80px 0; text-align: center; background-color: var(--color-fondo-claro); }
+    .marcas h2 { font-size: 36px; color: var(--color-secundario); margin-bottom: 50px; position: relative; display: inline-block; }
+    .marcas h2::after { content: ''; position: absolute; bottom: -10px; left: 0; width: 100%; height: 3px; background-color: var(--color-acento-servicio); }
+    .marcas-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 30px; align-items: center; }
+    .marcas-grid a { display: block; opacity: 0.6; filter: grayscale(100%); transition: all 0.3s ease; }
+    .marcas-grid a:hover { opacity: 1; filter: grayscale(0%); }
+    .marcas-grid img { max-width: 100%; height: auto; max-height: 45px; object-fit: contain; }
+    
+    @media (max-width: 1200px) { .product-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); } }
+    @media (max-width: 900px) { .nosotros-content { flex-direction: column; } }
+    @media (max-width: 768px) { .marcas-grid { grid-template-columns: repeat(3, 1fr); gap: 25px; } }
+    @media (max-width: 480px) { .marcas-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+
+<main>
+
+    <section class="hero">
+        <div class="logo-banner">
+            <img src="/img/logo-hero.png" alt="Labelec Ingeniería">
+        </div>
+
+        <div class="hero-content">
+            <h1>Líder Regional en Tecnología Médica</h1>
+            <p>Encuentre el producto medico que necesita.</p>
+            
+            <div class="search-container">
+                <input type="search" id="search-input" placeholder="Buscar por producto o modelo ">
+                <div id="search-results"></div>
+            </div>
+            
+            <div class="hero-buttons">
+                <a href="#especialidades" class="cta-button cta-button-azul">Ver Catálogo</a>
+                <a href="/alquileres" class="cta-button cta-button-azul-oscuro">Ver Alquileres</a>
+                <a href="/servicio" class="cta-button cta-button-verde">Solicitar Soporte</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="linea-directa">
+        <div class="container">
+            <h3>Línea Directa <strong>0810 444 4110</strong></h3>
+        </div>
+    </section>
+
+    <section class="nosotros" id="nosotros">
+        <div class="container">
+            <div class="nosotros-content">
+                <div class="nosotros-text">
+                    <h2>Trayectoria, Dinamismo y Confianza</h2>
+                    <p>Con más de 50 años de experiencia, en LABELEC Ingeniería lideramos la provisión de equipos e insumos médicos en Entre Ríos y Santa Fe.</p>
+                    <p>Nos especializamos en áreas críticas (quirófano, cardiología, neurología) a través de tres divisiones clave: Venta, Alquiler y Servicio Técnico.</p>
+                    <p>Nuestra visión de servicio nos impulsa a ser más que proveedores: somos socios estratégicos a largo plazo para nuestros clientes.</p>
+                    
+                    <a href="/informacion" class="cta-button cta-button-azul-oscuro" style="margin-top: 20px;">Conocer más sobre Labelec</a>
+                </div>
+                <div class="nosotros-imagen">
+                    <img src="/img/nosotros.png" alt="Equipo de Labelec Ingeniería" onerror="this.style.display='none'">
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="productos" id="novedades"> 
+        <div class="container">
+            <h2 style="text-align: center; font-size: 36px;">Novedades sobre Labelec</h2>
+            
+            <div class="product-grid" id="novedades-grid-container">
+                <p style="text-align:center; width:100%">Cargando noticias...</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="/novedades" class="cta-button cta-button-azul-oscuro">Ver todas las novedades</a>
+            </div>
+        </div>
+    </section>
+    
+    <section class="section-specialties" id="especialidades">
+        <div class="container">
+            <div class="section-header">
+                <h2>Nuestras Especialidades</h2>
+                <p>Explore nuestro catálogo organizado por áreas críticas.</p>
+            </div>
+
+            <div class="specialties-grid">
+    
+                <a href="/categoria/Anestesia" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-anestesia.png" alt="Anestesia">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Anestesia</h3>
+                        <p>Mesas de anestesia y monitoreo avanzado para quirófano.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Audiología y Equilibrio" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-audiologia.png" alt="Audiología y Equilibrio">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Audiología y Equilibrio</h3>
+                        <p>Equipos para diagnóstico y estudio audiológico.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+    
+                <a href="/categoria/Cardiologia" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-cardiologia.png" alt="Cardiología">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Cardiología</h3>
+                        <p>Equipamiento para diagnóstico y monitoreo cardiológico.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+    
+                 <a href="/categoria/Cirugia" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-cirugia.png" alt="Cirugía - Quirófano">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Cirugía - Quirófano</h3>
+                        <p>Soluciones integrales para el quirófano.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Cardiovascular" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-cirugia-cardiovascular.png" alt="Cirugía Cardiovascular">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Cirugía Cardiovascular</h3>
+                        <p>Insumos y equipos para cirugía cardiovascular.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Clinica" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-diagnostico.png" alt="Clínica y Diagnostico Primario">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Clínica y Diagnostico</h3>
+                        <p>Equipamiento para consultorios y diagnóstico.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Heridas" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-heridas.png" alt="Cuidado de Heridas">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Cuidado de Heridas</h3>
+                        <p>Sistemas de terapia y curación avanzada de heridas.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Criticos" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-criticos.png" alt="Cuidados Críticos">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Cuidados Críticos</h3>
+                        <p>Equipos para monitoreo en unidades de terapia intensiva.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Domiciliarios" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-domiciliarios.png" alt="Cuidados Domiciliarios">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Cuidados Domiciliarios</h3>
+                        <p>Soluciones para internación y cuidado domiciliario.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Emergencia" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-emergencia.png" alt="Emergencia y Traslado">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Emergencia y Traslado</h3>
+                        <p>Equipamiento portátil para emergencias y ambulancias.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Kinesiologia" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-kinesiologia.png" alt="Kinesiología Respiratoria">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Kinesiología Respiratoria</h3>
+                        <p>Equipos para terapia y rehabilitación respiratoria.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Neonatologia" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-neonatologia.png" alt="Neonatología">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Neonatología</h3>
+                        <p>Incubadoras, servocunas y fototerapia.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Neumonologia" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-neumonologia.png" alt="Neumonología">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Neumonología</h3>
+                        <p>Equipos de alto flujo, CPAP y ventilación.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Neurologia" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-neurologia.png" alt="Neurología">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Neurología</h3>
+                        <p>Equipamiento para diagnóstico y monitoreo neurológico.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Nutricion" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-nutricion.png" alt="Nutrición">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Nutrición</h3>
+                        <p>Bombas de infusión enteral y soporte nutricional.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a href="/categoria/Ostomia" class="specialty-card" data-aos="fade-up">
+                    <div class="specialty-img-wrapper">
+                        <img src="/img/cat-ostomia.png" alt="Ostomía e Incontinencia">
+                    </div>
+                    <div class="specialty-content">
+                        <h3>Ostomía e Incontinencia</h3>
+                        <p>Insumos y productos para el cuidado del paciente.</p>
+                        <span class="btn-text">Ver Equipos <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </a>
+
+            </div>
+
+        </div>
+    </section>
+
+    <section class="nosotros" id="compromiso">
+        <div class="container" style="max-width: 900px; text-align: left;">
+            <h2 style="text-align: center; font-size: 36px;">Nuestro Compromiso</h2>
+            <ul class="compromisos-lista">
+                <li>Esmerarnos por dar la mejor respuesta al cliente o usuario, conscientes de la relación directa que nuestro accionar tiene sobre la salud de las personas.</li>
+                <li>Preocuparnos por la capacitación y el desarrollo personal de nuestros colaboradores, a fin de conformar un equipo de trabajo calificado y un ambiente de trabajo proactivo.</li>
+                <li>Mejorar de manera continua la calidad y confiabilidad de los procesos y servicios; registrando y comunicando toda observación que pueda atentar contra este objetivo.</li>
+                <li>Nuestro compromiso se extiende a la elección de proveedores, reconociéndolos como parte activa en nuestra respuesta al cliente.</li>
+                <li>Preocuparnos por una administración cuidadosa, que asegure un equilibrio económico-financiero.</li>
+                <li>Apostar a la prosperidad de la Organización, a través de una gestión honesta, compatible con el desarrollo humano, la responsabilidad social y el medio ambiente.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="marcas" id="marcas">
+        <div class="container">
+            <h2>Marcas</h2>
+            <div class="marcas-grid">
+                <a href="/marca/Medix"><img src="/img/marcas/medix.png" alt="Medix"></a>
+                <a href="/marca/Camino"><img src="/img/marcas/camino.png" alt="Camino"></a>
+                <a href="/marca/Fisher"><img src="/img/marcas/fisher-paykel.png" alt="Fisher & Paykel"></a>
+                <a href="/marca/Natus"><img src="/img/marcas/natus.png" alt="Natus"></a>
+                <a href="/marca/SLE"><img src="/img/marcas/sle.png" alt="SLE"></a>
+                <a href="/marca/VivoLight"><img src="/img/marcas/vivolight.png" alt="Vivolight"></a>
+                <a href="/marca/Mindray"><img src="/img/marcas/mindray.png" alt="Mindray"></a>
+                <a href="/marca/Pardo"><img src="/img/marcas/pardo.png" alt="Pardo"></a>
+                <a href="/marca/WelchAllyn"><img src="/img/marcas/welchallyn.png" alt="Welch Allyn"></a>
+                <a href="/marca/Edwards"><img src="/img/marcas/edwards.png" alt="Edwards"></a>
+                <a href="/marca/Ambu"><img src="/img/marcas/ambu.png" alt="Ambu"></a>
+                <a href="/marca/Vygon"><img src="/img/marcas/vygon.png" alt="Vygon"></a>
+                <a href="/marca/Tracoe"><img src="/img/marcas/tracoe.png" alt="Tracoe"></a>
+                <a href="/marca/Biometrix"><img src="/img/marcas/biometrix.png" alt="Biometrix"></a>
+                <a href="/marca/Teleflex"><img src="/img/marcas/teleflex.png" alt="Teleflex"></a>
+                <a href="/marca/Pajunk"><img src="/img/marcas/pajunk.png" alt="Pajunk"></a>
+                <a href="/marca/3M"><img src="/img/marcas/3m-bairhugger.png" alt="3M Bair Hugger"></a>
+                <a href="/marca/VBM"><img src="/img/marcas/vbm.png" alt="VBM"></a>
+                <a href="/marca/TMD"><img src="/img/marcas/tmd.png" alt="TMD"></a>
+                <a href="/marca/Anios"><img src="/img/marcas/anios.png" alt="Anios"></a>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    // Lógica del Buscador y Novedades (CONECTADO A LA API REAL)
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results');
+    let productDatabase = []; 
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Cargar base de datos de productos para el buscador
+        try {
+            if(searchInput) {
+                searchInput.placeholder = "Cargando productos...";
+                searchInput.disabled = true;
+                
+                const response = await fetch('/api/productos');
+                if (!response.ok) throw new Error('No se pudo cargar la base de datos.');
+                
+                productDatabase = await response.json();
+                searchInput.placeholder = "Buscar por producto o modelo";
+                searchInput.disabled = false;
+            }
+        } catch (error) {
+            console.error("Error al cargar productos:", error);
+            if(searchInput) searchInput.placeholder = "Error al cargar productos.";
+        }
+
+        cargarNovedades();
+    });
+
+    if(searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            searchResults.innerHTML = ''; 
+
+            if (searchTerm.length < 2) { 
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            const filteredProducts = productDatabase.filter(product => {
+                const nombre = product.nombre || '';
+                const marca = product.marca || '';
+                const modelo = product.modelo || '';
+                return nombre.toLowerCase().includes(searchTerm) || 
+                       marca.toLowerCase().includes(searchTerm) ||
+                       modelo.toLowerCase().includes(searchTerm);
+            });
+
+            if (filteredProducts.length > 0) {
+                searchResults.style.display = 'block';
+                // Mostrar resultados
+                filteredProducts.slice(0, 8).forEach(product => {
+                    const link = document.createElement('a');
+                    // IMPORTANTE: Usar id manual o _id automático
+                    const linkId = product.id || product._id;
+                    link.href = `/producto?id=${linkId}`;
+                    link.innerHTML = `${product.nombre} <span style="font-size: 12px; color: var(--color-secundario);">- ${product.marca} ${product.modelo || ''}</span>`;
+                    searchResults.appendChild(link);
+                });
+            } else {
+                searchResults.style.display = 'block';
+                searchResults.innerHTML = `<div style="padding: 15px 20px; color: var(--color-secundario);">No se encontraron resultados.</div>`;
+            }
+        });
+        document.addEventListener('click', (e) => {
+            if (searchResults && !searchResults.contains(e.target) && !searchInput.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+    }
+
+    async function cargarNovedades() {
+        const gridContainer = document.getElementById('novedades-grid-container');
+        if (!gridContainer) return;
+        
+        try {
+            const response = await fetch('/api/novedades');
+            if (!response.ok) throw new Error('Error cargando novedades');
+            const novedades = await response.json();
+            
+            gridContainer.innerHTML = '';
+            if (novedades.length === 0) {
+                 gridContainer.innerHTML = '<p style="text-align:center; width:100%; color:#777">No hay novedades recientes.</p>';
+                 return;
+            }
+
+            // Mostrar las últimas 3
+            novedades.slice(0, 3).forEach(novedad => {
+                const fecha = new Date(novedad.fecha).toLocaleDateString('es-AR');
+                const imagenes = (novedad.imagen_url || "").split(',');
+                let imagenPortada = imagenes[0] ? imagenes[0].trim() : '/img/favicon.png';
+                if(imagenPortada && !imagenPortada.startsWith('/') && !imagenPortada.startsWith('http')) imagenPortada = '/' + imagenPortada;
+
+                // ==========================================
+                // 🛠️ CORRECCIÓN CRÍTICA DE ID
+                // ==========================================
+                let idReal = null;
+                if (novedad._id) idReal = novedad._id;      // Prioridad 1: ID automático de NeDB
+                else if (novedad.id) idReal = novedad.id;   // Prioridad 2: ID manual (json importado)
+                
+                if (!idReal) {
+                    console.error("Novedad sin ID encontrada:", novedad);
+                    return; // Saltamos esta noticia rota para no mostrar errores
+                }
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${imagenPortada}" alt="${novedad.titulo}" onerror="this.src='/img/favicon.png'">
+                    <div class="product-card-content">
+                        <p style="font-size: 13px; color: var(--color-secundario); margin-bottom: 5px;">${fecha}</p>
+                        <h3 style="font-size: 18px;">${novedad.titulo}</h3>
+                        <p>${novedad.resumen}</p>
+                        <a href="/novedad?id=${idReal}" class="cta-button-secundario">Leer más</a>
+                    </div>
+                `;
+                gridContainer.appendChild(card);
+            });
+        } catch (error) { 
+            console.error("Error novedades:", error);
+            gridContainer.innerHTML = '<p>Error al cargar noticias.</p>';
+        }
+    }
+</script>
+
+<%- include('partials/footer') %>

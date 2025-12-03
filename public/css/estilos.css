@@ -1,0 +1,179 @@
+/* public/css/estilos.css */
+:root {
+    --color-primario: #1073AC;
+    --color-secundario: #727376;
+    --color-acento-venta: #47B5E7;
+    --color-acento-servicio: #96C94D;
+    --color-texto: #333333;
+    --color-fondo: #ffffff;
+    --color-fondo-claro: #f4f6f8;
+    --sombra-suave: 0 4px 15px rgba(0,0,0,0.05);
+    --sombra-hover: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Exo 2.0', sans-serif; color: var(--color-texto); background-color: var(--color-fondo-claro); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+a { text-decoration: none; transition: 0.3s; }
+
+/* --- Header --- */
+.header { background-color: var(--color-fondo); border-bottom: 1px solid #eee; padding: 10px 0; position: sticky; top: 0; z-index: 100; }
+.nav-container { display: flex; justify-content: space-between; align-items: center; }
+.logo img { height: 50px; width: auto; }
+.nav-menu { list-style: none; display: flex; align-items: center; }
+.nav-menu li { margin-left: 25px; }
+.nav-menu a { text-decoration: none; color: var(--color-secundario); font-weight: 600; transition: color 0.3s ease; }
+.nav-menu a:hover { color: var(--color-primario); }
+
+
+
+/* --- Footer --- */
+.footer { background-color: var(--color-primario); color: white; padding: 60px 0; margin-top: 60px; }
+.footer-content { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.footer-col h4 { font-size: 18px; margin-bottom: 15px; color: var(--color-acento-servicio); }
+.footer-col ul { list-style: none; }
+.footer-col li { margin-bottom: 10px; }
+.footer-col a, .footer-col p { color: white; text-decoration: none; font-weight: 400; }
+.footer-bottom { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 14px; }
+
+/* --- Layout Catálogo (Sidebar + Grid) --- */
+.main-content { display: flex; gap: 40px; padding: 60px 0; }
+
+/* Sidebar */
+.sidebar { flex: 0 0 250px; }
+.filter-box { background: white; padding: 25px; border-radius: 8px; box-shadow: var(--sombra-suave); }
+.filter-box h3 { color: var(--color-primario); margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+.filter-list { list-style: none; }
+.filter-list li { margin-bottom: 10px; }
+.filter-list label { display: flex; align-items: center; cursor: pointer; font-size: 15px; color: var(--color-secundario); transition: 0.2s; }
+.filter-list label:hover { color: var(--color-primario); }
+.filter-list input { margin-right: 10px; accent-color: var(--color-primario); width: 16px; height: 16px; }
+
+/* --- Grid Productos (Especialidades) --- */
+.section-specialties {
+    padding: 80px 0;
+    /* Antes usaba --color-light (no existe), ahora es transparente para heredar el fondo claro */
+    background-color: transparent; 
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.section-header h2 {
+    font-size: 36px; /* Ajustado al tamaño de los otros títulos */
+    display: inline-block;
+    position: relative;
+    color: var(--color-texto);
+}
+
+.section-header h2::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 4px;
+    background: var(--color-acento-servicio); /* Verde de la marca para el subrayado */
+    margin: 15px auto 0;
+    border-radius: 2px;
+}
+
+.specialties-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+.specialty-card {
+    position: relative;
+    display: block;
+    height: 400px; /* Altura fija para uniformidad */
+    background-color: white; /* Corregido: antes var(--color-white) */
+    border-radius: 10px;     /* Corregido: antes var(--radius-std) */
+    overflow: hidden;
+    box-shadow: var(--sombra-suave); /* Corregido: variable oficial */
+    transition: all 0.3s ease;       /* Corregido: transición estándar */
+    text-decoration: none;
+}
+
+.specialty-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--sombra-hover); /* Corregido: variable oficial */
+}
+
+.specialty-img-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.specialty-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+}
+
+.specialty-card:hover .specialty-img-wrapper img {
+    transform: scale(1.05);
+}
+
+.specialty-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.96);
+    padding: 25px;
+    z-index: 2;
+    border-top: 4px solid transparent;
+    transition: border-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Al pasar el mouse, aparece la línea superior con el AZUL de Venta */
+.specialty-card:hover .specialty-content {
+    border-top-color: var(--color-acento-venta); 
+}
+
+.specialty-content h3 {
+    font-size: 20px;
+    margin: 0;
+    color: var(--color-primario); /* Azul oscuro oficial */
+    font-weight: 700;
+}
+
+.specialty-content p {
+    font-size: 14px;
+    color: var(--color-secundario); /* Gris oficial */
+    margin: 0;
+    font-weight: 400;
+}
+
+.btn-text {
+    color: var(--color-primario); /* Azul oficial */
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 13px;
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s ease;
+}
+
+/* Pequeño efecto en la flecha al hacer hover */
+.specialty-card:hover .btn-text {
+    color: var(--color-acento-venta);
+}
+
+/* Botones CTA */
+.cta-button-secundario { background-color: transparent; color: var(--color-primario); border: 2px solid var(--color-primario); padding: 10px 20px; text-decoration: none; font-weight: 600; border-radius: 5px; transition: all 0.3s ease; font-size: 15px; }
+.cta-button-secundario:hover { background-color: var(--color-primario); color: white; }
+
+@media (max-width: 900px) { .main-content { flex-direction: column; } .sidebar { width: 100%; } }

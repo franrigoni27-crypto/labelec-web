@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pajunk - Labelec Ingeniería</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- (Todo el CSS es idéntico al de mindray.html) --- */
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        </header>
+
+    <main>
+
+        <section class="category-header">
+            <div class="container">
+                <img src="../img/marcas/pajunk.png" alt="Logo Pajunk" class="brand-logo">
+                <div>
+                    <div class="breadcrumbs">
+                        <a href="../index.html">Inicio</a> > <a href="../index.html#marcas">Marcas</a> > <b>Pajunk</b>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="product-list-container">
+            <div class="container">
+                <div class="product-list-grid" id="product-list-grid">
+                    </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer" id="contacto">
+        </footer>
+
+    <script src="../database.js"></script> <script>
+        // 2. Define la MARCA que esta página debe mostrar
+        const MARCA_ACTUAL = "Pajunk";
+
+        // 3. Encuentra el contenedor
+        const productGrid = document.getElementById('product-list-grid');
+
+        // 4. Filtra la base de datos
+        const productosDeEstaMarca = productDatabase.filter(producto => producto.marca === MARCA_ACTUAL);
+
+        // 5. Dibuja cada producto
+        productosDeEstaMarca.forEach(producto => {
+            const card = document.createElement('div');
+            card.className = 'product-item-card';
+            card.id = producto.id;
+            card.innerHTML = `
+                <img src="../${producto.imagen}" alt="${producto.nombre}" class="product-item-image">
+                <div class="product-item-content">
+                    <h3>${producto.nombre}</h3>
+                    <p>${producto.descripcion}</p>
+                    <a href="#" class="cta-button-cotizar">Solicitar Cotización</a>
+                </div>
+            `;
+            productGrid.appendChild(card);
+        });
+    </script>
+
+</body>
+</html>

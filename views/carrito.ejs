@@ -1,0 +1,364 @@
+<%- include('partials/header', { titulo: 'Mi Cotización - Labelec Ingeniería' }) %>
+
+<style>
+    /* --- Estilos Carrito --- */
+    .carrito-container { 
+        max-width: 900px; 
+        margin: 40px auto; 
+        background-color: var(--color-fondo); 
+        border-radius: 12px; 
+        box-shadow: var(--sombra-suave); 
+        padding: 40px; 
+    }
+    
+    .carrito-item { 
+        display: flex; 
+        flex-wrap: wrap; 
+        align-items: center; 
+        gap: 20px; 
+        margin-bottom: 20px; 
+        padding-bottom: 20px; 
+        border-bottom: 1px solid #eee; 
+    }
+    .carrito-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    
+    .carrito-item-img { 
+        width: 100px; 
+        height: 100px; 
+        object-fit: contain; 
+        border-radius: 8px; 
+        border: 1px solid #eee; 
+        background: #fff;
+        padding: 5px;
+    }
+    
+    .carrito-item-info { flex-grow: 1; min-width: 200px; }
+    .carrito-item-info h3 { font-size: 18px; margin-bottom: 5px; color: var(--color-primario); }
+    .carrito-item-info p { font-size: 14px; margin-bottom: 0; color: var(--color-secundario); }
+    
+    .carrito-item-controls { display: flex; align-items: center; gap: 15px; margin-left: auto; }
+    
+    .cantidad-item { 
+        width: 70px; 
+        padding: 10px; 
+        font-size: 16px; 
+        text-align: center; 
+        border: 1px solid #ddd; 
+        border-radius: 5px; 
+        font-family: 'Exo 2.0', sans-serif; 
+        font-weight: 600; 
+    }
+    
+    .btn-quitar { 
+        background-color: #e74c3c; 
+        color: white; 
+        border: none; 
+        padding: 10px 15px; 
+        border-radius: 5px; 
+        font-weight: 600; 
+        cursor: pointer; 
+        transition: background-color 0.3s ease; 
+    }
+    .btn-quitar:hover { background-color: #c0392b; }
+    
+    #carrito-vacio-msg { text-align: center; font-size: 18px; color: var(--color-secundario); padding: 40px 0; }
+
+    /* --- Estilos Formulario de Cotización --- */
+    .carrito-form-container {
+        background: #f9f9f9;
+        padding: 30px;
+        border-radius: 8px;
+        margin-top: 40px;
+        border: 1px solid #eee;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+    .form-input, .form-textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-family: 'Exo 2.0', sans-serif;
+        font-size: 16px;
+    }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    
+    .btn-cotizar { 
+        display: inline-block; 
+        padding: 15px 40px; 
+        text-decoration: none; 
+        font-weight: 600; 
+        border-radius: 5px; 
+        font-size: 18px; 
+        transition: all 0.3s ease; 
+        border: none; 
+        background-color: var(--color-acento-servicio); 
+        color: white; 
+        cursor: pointer; 
+        margin-top: 10px;
+    }
+    .btn-cotizar:hover { background-color: #82b240; transform: scale(1.02); }
+    .btn-cotizar:disabled { background-color: #ccc; cursor: not-allowed; transform: none; }
+
+    @media (max-width: 600px) {
+        .carrito-item-controls { margin-left: 0; width: 100%; justify-content: space-between; }
+        .form-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<main>
+    
+    <section class="category-header" style="padding: 20px 0; border-bottom: 1px solid #eee; background-color: var(--color-fondo);">
+         <div class="container">
+            <div class="breadcrumbs">
+                <a href="/">Inicio</a> > <b>Mi Cotización</b>
+            </div>
+        </div>
+    </section>
+
+    <div class="container carrito-container">
+        <h1 style="text-align: center; margin-bottom: 30px;">Mi Solicitud de Cotización</h1>
+        
+        <div id="carrito-items-container"></div>
+        
+        <div id="carrito-vacio-msg" style="display: none;">
+            <p>Tu carrito de cotización está vacío.</p>
+            <a href="/#productos" style="font-size: 16px; color: var(--color-primario); font-weight: 600;">Ver catálogo de productos</a>
+        </div>
+        
+        <div id="seccion-formulario" class="carrito-form-container" style="display: none;">
+            <h3 style="margin-bottom: 20px; color: var(--color-primario); border-bottom: 2px solid #eee; padding-bottom: 10px;">Finalizar Solicitud</h3>
+            <form id="form-cotizacion">
+                <div class="form-grid">
+                    <div>
+                        <label style="display:block; margin-bottom:5px; font-weight:600;">Nombre o Empresa *</label>
+                        <input type="text" id="cliente-nombre" class="form-input" placeholder="Nombre o Empresa" required>
+                    </div>
+                    <div>
+                        <label style="display:block; margin-bottom:5px; font-weight:600;">Email de contacto *</label>
+                        <input type="email" id="cliente-email" class="form-input" placeholder="Email de contacto" required>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600;">Teléfono </label>
+                    <input type="tel" id="cliente-telefono" class="form-input" placeholder="Teléfono">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600;">Mensaje adicional</label>
+                    <textarea id="cliente-mensaje" class="form-textarea" placeholder="Información útil extra"></textarea>
+                </div>
+                
+                <div style="text-align: right;">
+                    <p id="form-status" style="margin-bottom: 10px; font-weight: 600; min-height: 24px;"></p>
+                    <button type="submit" class="btn-cotizar" id="btn-enviar-real">
+                        Enviar Solicitud Ahora
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+    </div>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    
+    // --- 1. Cargar Base de Datos de Productos para mostrar detalles ---
+    let allProducts = [];
+    const itemsContainer = document.getElementById('carrito-items-container');
+    const msgVacio = document.getElementById('carrito-vacio-msg');
+    const seccionFormulario = document.getElementById('seccion-formulario');
+
+    try {
+        // Pedimos los productos al servidor
+        const response = await fetch('/api/productos'); 
+        if (!response.ok) throw new Error('No se pudo conectar al servidor');
+        allProducts = await response.json();
+    } catch (error) {
+        console.error("Error al cargar la base de datos de productos:", error);
+        itemsContainer.innerHTML = `<p style="color:red; text-align:center;">Error al cargar catálogo. Por favor, verifica que el servidor esté encendido.</p>`;
+        return;
+    }
+
+    // --- 2. Funciones del Carrito ---
+
+    function getCarrito() {
+        let carrito = [];
+        try {
+            const carritoGuardado = localStorage.getItem('carrito');
+            if (carritoGuardado) carrito = JSON.parse(carritoGuardado);
+            if (!Array.isArray(carrito)) carrito = [];
+        } catch (e) {
+            console.error("Error al leer carrito", e);
+            localStorage.setItem('carrito', '[]');
+            carrito = [];
+        }
+        return carrito;
+    }
+
+    function renderCarrito() {
+        const carrito = getCarrito();
+        itemsContainer.innerHTML = ''; 
+
+        if (carrito.length === 0) {
+            msgVacio.style.display = 'block';
+            seccionFormulario.style.display = 'none';
+        } else {
+            msgVacio.style.display = 'none';
+            seccionFormulario.style.display = 'block';
+
+            carrito.forEach(item => {
+                // Cruzamos el ID del localStorage con la base de datos real
+                const producto = allProducts.find(p => p.id === item.id);
+                
+                if (producto) {
+                     let imgs = (producto.imagen || "").split(',');
+                     let imgUrl = imgs[0] ? imgs[0].trim() : '/img/favicon.png';
+                     // Asegurar ruta absoluta
+                     if(!imgUrl.startsWith('/') && !imgUrl.startsWith('http')) imgUrl = '/' + imgUrl;
+
+                     const itemHTML = `
+                        <div class="carrito-item" id="item-${producto.id}">
+                            <img src="${imgUrl}" alt="${producto.nombre}" class="carrito-item-img" onerror="this.src='/img/favicon.png'">
+                            <div class="carrito-item-info">
+                                <h3>${producto.nombre}</h3>
+                                <p>Marca: ${producto.marca} | Modelo: ${producto.modelo || ''}</p>
+                            </div>
+                            <div class="carrito-item-controls">
+                                <input type="number" class="cantidad-item" value="${item.quantity}" min="1" data-id="${producto.id}">
+                                <button class="btn-quitar" data-id="${producto.id}">Quitar</button>
+                            </div>
+                        </div>
+                    `;
+                    itemsContainer.innerHTML += itemHTML;
+                }
+            });
+        }
+        
+        // Actualizar contador del menú (función global en footer)
+        if (typeof actualizarContadorNav === 'function') {
+            actualizarContadorNav();
+        }
+    }
+
+    function actualizarCantidad(id, cantidad) {
+        let carrito = getCarrito();
+        const itemIndex = carrito.findIndex(item => item.id === id);
+        if (itemIndex > -1) {
+            if (cantidad < 1) {
+                quitarProducto(id);
+            } else {
+                carrito[itemIndex].quantity = cantidad;
+                localStorage.setItem('carrito', JSON.stringify(carrito));
+            }
+        }
+    }
+
+    function quitarProducto(id) {
+        let carrito = getCarrito();
+        carrito = carrito.filter(item => item.id !== id);
+        localStorage.setItem('carrito', JSON.stringify(carrito));
+        renderCarrito(); 
+    }
+
+    // --- 3. Event Listeners ---
+
+    itemsContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-quitar')) {
+            quitarProducto(e.target.dataset.id);
+        }
+    });
+    
+    itemsContainer.addEventListener('change', (e) => {
+        if (e.target.classList.contains('cantidad-item')) {
+            const id = e.target.dataset.id;
+            const cantidad = parseInt(e.target.value) || 1;
+            actualizarCantidad(id, cantidad);
+        }
+    });
+
+    // --- 4. Envío de Cotización ---
+    
+    const formCotizacion = document.getElementById('form-cotizacion');
+    const statusMsg = document.getElementById('form-status');
+    const btnEnviar = document.getElementById('btn-enviar-real');
+
+    formCotizacion.addEventListener('submit', async (e) => {
+        e.preventDefault(); 
+
+        const carrito = getCarrito();
+        if (carrito.length === 0) {
+            alert("El carrito está vacío.");
+            return;
+        }
+
+        const carritoEnriquecido = carrito.map(item => {
+            const prod = allProducts.find(p => p.id === item.id);
+            return {
+                id: item.id,
+                quantity: item.quantity,
+                nombre: prod ? prod.nombre : 'Producto desconocido',
+                marca: prod ? prod.marca : ''
+            };
+        });
+
+        const datos = {
+            nombre: document.getElementById('cliente-nombre').value,
+            email: document.getElementById('cliente-email').value,
+            telefono: document.getElementById('cliente-telefono').value,
+            mensaje: document.getElementById('cliente-mensaje').value,
+            carrito: carritoEnriquecido
+        };
+
+        const textoOriginal = btnEnviar.textContent;
+        btnEnviar.disabled = true;
+        btnEnviar.textContent = "Enviando...";
+        statusMsg.textContent = "";
+
+        try {
+            const response = await fetch('/api/cotizar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+
+            const resultado = await response.json();
+
+            if (response.ok && resultado.success) {
+                localStorage.removeItem('carrito');
+                actualizarContadorNav();
+                
+                const mainContainer = document.querySelector('.carrito-container');
+                mainContainer.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px;">
+                        <h2 style="color: #96C94D; font-size: 36px; margin-bottom: 20px;">¡Solicitud Enviada!</h2>
+                        <p style="font-size: 18px; color: var(--color-secundario);">Hemos recibido tu pedido de cotización correctamente.</p>
+                        <p>Te responderemos a la brevedad al email: <b>${datos.email}</b></p>
+                        <br>
+                        <a href="/" class="btn-cotizar" style="background-color: var(--color-primario);">Volver al Inicio</a>
+                    </div>
+                `;
+            } else {
+                throw new Error(resultado.message || 'Error en el servidor');
+            }
+
+        } catch (error) {
+            console.error(error);
+            statusMsg.textContent = "❌ Error: " + error.message;
+            statusMsg.style.color = "red";
+            btnEnviar.disabled = false;
+            btnEnviar.textContent = textoOriginal;
+        }
+    });
+
+    // Carga inicial
+    renderCarrito();
+});
+</script>
+
+<%- include('partials/footer') %>

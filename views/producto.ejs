@@ -1,0 +1,341 @@
+<%- include('partials/header', { titulo: 'Detalle de Producto - Labelec Ingeniería' }) %>
+
+<style>
+    /* --- Estilos específicos de la página de Producto --- */
+    
+    /* Layout Principal */
+    #product-top-section { 
+        display: none; /* Se muestra al cargar */
+        grid-template-columns: 1fr 1fr; 
+        gap: 50px;
+        padding: 40px; 
+        background-color: var(--color-fondo); 
+        border-radius: 12px; 
+        box-shadow: var(--sombra-suave); 
+        margin-top: 40px; 
+        align-items: start;
+    }
+    
+    /* --- SLIDER CUADRADO FIJO --- */
+    .product-slider-container {
+        width: 100%;
+        max-width: 550px; /* Tamaño máximo del cuadrado */
+        margin: 0 auto;
+        position: relative;
+        border: 1px solid #eee;
+        background-color: #fff; /* Fondo blanco para fotos transparentes */
+        border-radius: 12px;
+        overflow: hidden;
+        /* Esto fuerza que sea un cuadrado perfecto (Ancho = Alto) */
+        aspect-ratio: 1 / 1; 
+    }
+
+    .slider-wrapper { 
+        display: flex;
+        height: 100%;
+        transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1); /* Animación suave */
+    }
+    
+    .slider-slide { 
+        /* Cada slide ocupa el 100% del ancho del contenedor */
+        min-width: 100%; 
+        height: 100%;
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        position: relative;
+    }
+    
+    .slider-image { 
+        width: 100%;
+        height: 100%;
+        /* 'contain' muestra toda la foto. 'cover' llenaría el cuadrado (recortando). */
+        object-fit: contain; 
+        cursor: zoom-in;
+        padding: 20px; /* Margen interno para que la foto no toque los bordes */
+        transition: transform 0.3s ease;
+    }
+    .slider-image:hover { transform: scale(1.05); }
+    
+    /* Controles Slider */
+    .slider-controls { 
+        position: absolute;
+        top: 50%; 
+        left: 0; 
+        width: 100%; 
+        display: flex; 
+        justify-content: space-between; 
+        transform: translateY(-50%); 
+        pointer-events: none;
+        padding: 0 10px;
+    }
+    .slider-button { 
+        pointer-events: all;
+        background-color: rgba(255, 255, 255, 0.8); 
+        backdrop-filter: blur(2px);
+        border: 1px solid rgba(0,0,0,0.1); 
+        border-radius: 50%; 
+        width: 45px; 
+        height: 45px; 
+        font-size: 20px; 
+        color: var(--color-primario); 
+        cursor: pointer; 
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        transition: all 0.3s ease; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .slider-button:hover { background-color: var(--color-primario); color: white; transform: scale(1.1); }
+    .slider-button:disabled { opacity: 0; cursor: default; }
+
+    /* Información del Producto */
+    .product-info { 
+        display: flex; 
+        flex-direction: column;
+        justify-content: center; 
+        height: 100%; /* Para centrar verticalmente si sobra espacio */
+    }
+    .product-info .marca { font-size: 14px; font-weight: 700; color: var(--color-acento-servicio); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .product-info .nombre { font-size: 38px; line-height: 1.2; color: var(--color-primario); margin-bottom: 10px; font-weight: 700; }
+    .product-info .modelo { font-size: 18px; font-weight: 500; color: var(--color-secundario); margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; width: 100%; }
+    
+    /* Controles de Compra */
+    .add-to-cart-controls { 
+        display: flex;
+        align-items: center; 
+        gap: 15px; 
+        margin-top: 10px; 
+        padding: 25px;
+        background-color: #fff;
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+    }
+    .quantity-input { width: 80px; padding: 12px; font-size: 18px; text-align: center; border: 1px solid #ddd; border-radius: 6px; font-weight: 600; color: var(--color-texto); }
+    
+    .cta-button { padding: 14px 30px; text-decoration: none; font-weight: 700; border-radius: 6px; font-size: 16px; transition: all 0.3s ease; border: none; cursor: pointer; }
+    .cta-button-azul-oscuro { background-color: var(--color-primario); color: white; flex-grow: 1; text-align: center; }
+    .cta-button-azul-oscuro:hover { background-color: #0d5a8a; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16, 115, 172, 0.2); }
+
+    #mensaje-confirmacion { color: #96C94D; font-weight: 600; margin-top: 15px; display: none; font-size: 15px; text-align: center; width: 100%; }
+
+    /* Descripción Inferior */
+    #product-description-section {
+        display: none;
+        margin-top: 40px;
+        padding: 50px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: var(--sombra-suave);
+        margin-bottom: 60px;
+    }
+    #product-description-section h3 { font-size: 24px; color: var(--color-primario); border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 25px; }
+    .descripcion-texto { font-size: 17px; line-height: 1.8; color: #444; white-space: pre-line; }
+
+    /* Estados */
+    #loading-msg { text-align: center; padding: 100px 20px; font-size: 20px; color: var(--color-secundario); }
+    #error-msg { display: none; text-align: center; padding: 80px 20px; background: white; border-radius: 12px; margin-top: 40px; box-shadow: var(--sombra-suave); }
+    
+    /* Lightbox */
+    .lightbox { display: none; position: fixed; z-index: 2000; padding-top: 50px; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.95); }
+    .lightbox-content { margin: auto; display: block; max-width: 90%; max-height: 90vh; object-fit: contain; animation: zoom 0.3s; }
+    .lightbox-close { position: absolute; top: 20px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
+    @keyframes zoom { from {transform: scale(0.8)} to {transform: scale(1)} }
+
+    @media (max-width: 900px) {
+        #product-top-section { grid-template-columns: 1fr; padding: 20px; gap: 30px; }
+        .product-slider-container { max-width: 100%; }
+        .product-info { padding: 0; }
+        .product-info .nombre { font-size: 32px; }
+        .add-to-cart-controls { flex-direction: column; align-items: stretch; }
+        .quantity-input { width: 100%; margin-bottom: 10px; }
+    }
+</style>
+
+<main class="container">
+    
+    <div id="loading-msg">Cargando información del producto...</div>
+
+    <div id="error-msg">
+        <h2>Producto no encontrado</h2>
+        <p id="error-text">Lo sentimos, el producto que buscas no está disponible.</p>
+        <br>
+        <a href="/#especialidades" class="cta-button cta-button-azul-oscuro" style="width: auto; display: inline-block;">Volver al catálogo</a>
+    </div>
+
+    <div id="product-top-section">
+        
+        <div class="product-slider-container">
+            <div class="slider-wrapper" id="slider-wrapper"></div>
+            <div class="slider-controls" id="slider-controls">
+                <button id="prevBtn" class="slider-button"><i class="fas fa-chevron-left"></i></button>
+                <button id="nextBtn" class="slider-button"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <div class="product-info">
+            <div class="marca" id="prod-marca"></div>
+            <h1 class="nombre" id="prod-nombre"></h1>
+            <div class="modelo" id="prod-modelo"></div>
+            
+            <div class="add-to-cart-controls">
+                <div style="display:flex; align-items:center; gap:10px; width:100%;">
+                    <input type="number" id="cantidad-producto" class="quantity-input" value="1" min="1" aria-label="Cantidad">
+                    <button id="btn-agregar-carrito" class="cta-button cta-button-azul-oscuro">
+                        <i class="fas fa-cart-plus"></i> Agregar a Cotización
+                    </button>
+                </div>
+            </div>
+            <div id="mensaje-confirmacion"></div>
+        </div>
+    </div>
+
+    <div id="product-description-section">
+        <h3>Descripción y Características</h3>
+        <div class="descripcion-texto" id="prod-desc"></div>
+    </div>
+
+</main>
+
+<div id="image-lightbox" class="lightbox">
+    <span class="lightbox-close">&times;</span>
+    <img class="lightbox-content" id="lightbox-img">
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const loadingMsg = document.getElementById('loading-msg');
+    const errorMsg = document.getElementById('error-msg');
+    const topSection = document.getElementById('product-top-section');
+    const descSection = document.getElementById('product-description-section');
+    
+    const elMarca = document.getElementById('prod-marca');
+    const elModelo = document.getElementById('prod-modelo');
+    const elNombre = document.getElementById('prod-nombre');
+    const elDesc = document.getElementById('prod-desc');
+    const wrapper = document.getElementById('slider-wrapper');
+    const controls = document.getElementById('slider-controls');
+    
+    let currentSlide = 0;
+    let totalSlides = 0;
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    if (!id) { mostrarError(); return; }
+
+    try {
+        const response = await fetch('/api/productos');
+        if (!response.ok) throw new Error("Error conexión");
+        
+        const productos = await response.json();
+        const producto = productos.find(p => p.id === id || p._id === id); // Soporte para ambos IDs
+
+        if (!producto) { mostrarError(); return; }
+
+        document.title = `${producto.nombre} - Labelec`;
+        elMarca.textContent = producto.marca || '';
+        elModelo.textContent = producto.modelo ? `Modelo: ${producto.modelo}` : '';
+        elNombre.textContent = producto.nombre || 'Producto';
+        elDesc.textContent = producto.descripcion || 'Sin descripción detallada.';
+
+        // Imágenes
+        const imagenes = (producto.imagen || '').split(',').map(s => s.trim()).filter(s => s);
+        if (imagenes.length === 0) imagenes.push('/img/favicon.png'); 
+        
+        totalSlides = imagenes.length;
+        wrapper.innerHTML = '';
+        
+        // Renderizar Slides
+        imagenes.forEach(url => {
+            let cleanUrl = url;
+            if(!cleanUrl.startsWith('http') && !cleanUrl.startsWith('/')) cleanUrl = '/' + cleanUrl;
+            
+            const slide = document.createElement('div');
+            slide.className = 'slider-slide';
+            
+            const img = document.createElement('img');
+            img.src = cleanUrl;
+            img.alt = producto.nombre;
+            img.className = 'slider-image';
+            img.onclick = () => openLightbox(cleanUrl);
+            img.onerror = () => { img.src = '/img/favicon.png'; };
+            
+            slide.appendChild(img);
+            wrapper.appendChild(slide);
+        });
+
+        // Lógica Slider
+        if (totalSlides > 1) {
+            controls.style.display = 'flex';
+            const btnPrev = document.getElementById('prevBtn');
+            const btnNext = document.getElementById('nextBtn');
+            
+            const updateSlider = () => {
+                wrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+                btnPrev.style.opacity = currentSlide === 0 ? '0.5' : '1';
+                btnPrev.style.pointerEvents = currentSlide === 0 ? 'none' : 'all';
+                btnNext.style.opacity = currentSlide === totalSlides - 1 ? '0.5' : '1';
+                btnNext.style.pointerEvents = currentSlide === totalSlides - 1 ? 'none' : 'all';
+            };
+
+            btnPrev.onclick = () => { if (currentSlide > 0) { currentSlide--; updateSlider(); } };
+            btnNext.onclick = () => { if (currentSlide < totalSlides - 1) { currentSlide++; updateSlider(); } };
+            updateSlider();
+        } else {
+            controls.style.display = 'none';
+        }
+
+        loadingMsg.style.display = 'none';
+        topSection.style.display = 'grid';
+        descSection.style.display = 'block';
+
+        setupCarrito(producto);
+
+    } catch (error) {
+        console.error(error);
+        mostrarError();
+    }
+
+    function mostrarError() {
+        loadingMsg.style.display = 'none';
+        errorMsg.style.display = 'block';
+    }
+
+    function setupCarrito(producto) {
+        const btnAgregar = document.getElementById('btn-agregar-carrito');
+        const inputQty = document.getElementById('cantidad-producto');
+        const msgConf = document.getElementById('mensaje-confirmacion');
+
+        btnAgregar.onclick = () => {
+            const cantidad = parseInt(inputQty.value) || 1;
+            let carrito = [];
+            try { carrito = JSON.parse(localStorage.getItem('carrito')) || []; } catch(e) { carrito = []; }
+            
+            const idProd = producto.id || producto._id;
+            const existente = carrito.find(item => item.id === idProd);
+            
+            if (existente) { existente.quantity += cantidad; }
+            else { carrito.push({ id: idProd, quantity: cantidad }); }
+            
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+            if(typeof actualizarContadorNav === 'function') actualizarContadorNav();
+
+            msgConf.style.display = 'block';
+            msgConf.innerHTML = `✅ Agregado al carrito (Total: ${cantidad})`;
+            setTimeout(() => { msgConf.style.display = 'none'; }, 3000);
+        };
+    }
+
+    // Lightbox
+    const lb = document.getElementById('image-lightbox');
+    const lbImg = document.getElementById('lightbox-img');
+    const lbClose = document.querySelector('.lightbox-close');
+
+    function openLightbox(src) { lbImg.src = src; lb.style.display = 'block'; }
+    lbClose.onclick = () => lb.style.display = 'none';
+    lb.onclick = (e) => { if (e.target === lb) lb.style.display = 'none'; };
+});
+</script>
+
+<%- include('partials/footer') %>

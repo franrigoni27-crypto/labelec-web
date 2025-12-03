@@ -1,0 +1,139 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    /* Habilitar desplazamiento suave nativo */
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 100px; /* Compensa la altura de tu menú fijo para que no tape los títulos */
+    }
+
+    /* Estilos Footer (Iconos y Textos) */
+    .footer-social-link {
+        color: white; 
+        text-decoration: none;
+        display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+        transition: opacity 0.3s, transform 0.2s; font-size: 15px;
+    }
+    .footer-social-link:hover { opacity: 0.8; transform: translateX(5px); }
+    .footer-social-link i { font-size: 1.3em; width: 25px; text-align: center; }
+
+    /* Tooltip Email */
+    .email-copy-container { position: relative; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 15px; transition: color 0.3s; }
+    .email-copy-container:hover { color: #96C94D; }
+    .copy-tooltip { visibility: hidden; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 5px 10px; position: absolute; z-index: 1; bottom: 100%; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s; font-size: 12px; pointer-events: none; white-space: nowrap; margin-bottom: 5px; }
+    .email-copy-container:hover .copy-tooltip { visibility: visible; opacity: 1; }
+</style>
+
+<footer class="footer" id="contacto">
+    <div class="container">
+        <div class="footer-content">
+            
+            <div class="footer-col">
+                <h4>Labelec Ingeniería</h4>
+                <p>Líder Regional en Tecnología Médica.</p>
+            </div>
+            
+            <div class="footer-col">
+                <h4>Navegación</h4>
+                <ul>
+                    <li><a href="/">Inicio</a></li>
+                    <li><a href="/alquileres">Alquileres</a></li>
+                    <li><a href="/servicio">Servicio Técnico</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-col">
+                <h4>Contacto</h4>
+                <p style="margin-bottom: 15px;">Provincias Unidas 1482 - Paraná</p>
+                
+                <div class="email-copy-container" onclick="copiarEmail()">
+                    <i class="fas fa-envelope"></i>
+                    <span style="text-decoration: underline;">info@labelec.com.ar</span>
+                    <span class="copy-tooltip" id="email-tooltip">Click para copiar</span>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <a href="https://www.instagram.com/labelecingenieria/" target="_blank" class="footer-social-link">
+                        <i class="fab fa-instagram"></i><span>@labelecingenierias</span>
+                    </a>
+                    <a href="https://ar.linkedin.com/company/labelec-ingenieria" target="_blank" class="footer-social-link">
+                        <i class="fab fa-linkedin"></i><span>Labelec Ingenieria</span>
+                    </a>
+                    <a href="https://www.facebook.com/labelecingenieria/" target="_blank" class="footer-social-link">
+                        <i class="fab fa-facebook"></i><span>Labelec Ingenieria</span>
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Labelec Ingeniería. - Todos los derechos reservados.</p>
+            <p>Web development:</p>
+            <div class="email-copy-container" onclick="copiarEmail()">
+                    <i class="fas fa-envelope"></i>
+                    <span style="text-decoration: underline;">franciscorigoni27@gmail.com</span>
+                    <span class="copy-tooltip" id="email-tooltip">Click para copiar</span>
+            </div>
+        </div>
+    </div>
+</footer>
+    
+<script src="/js/carrito-global.js"></script>
+
+<script>
+    // 1. Script para Copiar Email
+    function copiarEmail() {
+        const email = "info@labelec.com.ar";
+        navigator.clipboard.writeText(email).then(() => {
+            const tooltip = document.getElementById("email-tooltip");
+            tooltip.innerText = "¡Copiado!";
+            tooltip.style.backgroundColor = "#96C94D";
+            setTimeout(() => {
+                tooltip.innerText = "Click para copiar";
+                tooltip.style.backgroundColor = "#333";
+            }, 2000);
+        }).catch(err => console.error('Error al copiar', err));
+    }
+
+    // 2. SCRIPT DE NAVEGACIÓN SUAVE INTELIGENTE
+    document.addEventListener("DOMContentLoaded", function() {
+        // Seleccionar todos los links que apuntan al index o anclas
+        const links = document.querySelectorAll('a[href*="index.html"], a[href^="#"], a[href="/"]');
+
+        links.forEach(link => {
+            link.addEventListener("click", function(e) {
+                // Detectar si estamos en la HOME actualmente
+                const currentPath = window.location.pathname;
+                const isHome = currentPath === "/" || currentPath === "/index.html";
+
+                // Obtener hacia dónde va el link
+                const targetUrl = new URL(this.href, window.location.origin);
+                const targetPath = targetUrl.pathname;
+                const targetHash = targetUrl.hash;
+
+                // SI: Estamos en home Y el link va a home (o una sección de home)
+                if (isHome && (targetPath === "/" || targetPath === "/index.html")) {
+                    e.preventDefault(); // ¡ALTO! No recargues la página.
+
+                    if (targetHash) {
+                        // Caso A: Ir a una sección (ej: #contacto)
+                        const targetElement = document.querySelector(targetHash);
+                        if (targetElement) {
+                            // Deslizar suavemente hacia el elemento
+                            targetElement.scrollIntoView({ behavior: "smooth" });
+                            // Actualizar URL sin recargar (opcional, para que quede bonito)
+                            history.pushState(null, null, targetHash);
+                        }
+                    } else {
+                        // Caso B: Ir a "Inicio" (sin hash) -> Subir arriba de todo
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                        history.pushState(null, null, "index.html");
+                    }
+                }
+                // SI NO: Deja que el navegador actúe normal (cargará la otra página)
+            });
+        });
+    });
+</script>
+</body>
+</html>
