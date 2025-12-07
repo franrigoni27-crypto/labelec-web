@@ -28,6 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Configuración de Sesión
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -36,6 +37,7 @@ app.use(session({
     cookie: { maxAge: 1000 * 60 * 60 * 24 } 
 }));
 
+// Middleware de Protección
 const protect = (req, res, next) => {
     if (req.session.userId) return next();
     res.redirect('/admin/login');
@@ -43,7 +45,7 @@ const protect = (req, res, next) => {
 
 app.use((req, res, next) => { res.locals.user = req.session.userId; next(); });
 
-// --- RUTAS PÚBLICAS (Igual que antes) ---
+// --- RUTAS PÚBLICAS ---
 app.get('/', (req, res) => res.render('index', { titulo: 'Inicio' }));
 app.get('/alquileres', (req, res) => res.render('alquileres'));
 app.get('/servicio', (req, res) => res.render('servicio'));
@@ -137,16 +139,11 @@ app.get('/admin', protect, async (req, res) => {
 
 // --- ABM CON RESPUESTAS JSON (AJAX) Y MULTI-IMAGEN ---
 
-// ABM PRODUCTOS
+// 1. PRODUCTOS
 app.post('/admin/productos', protect, upload.array('imagenes'), async (req, res) => {
     try {
-        // Extraemos 'soluciones' del cuerpo del formulario
         const { id, nombre, marca, modelo, categoria, descripcion, edit_id, soluciones } = req.body;
-        
-        // Convertir string de especialidades a array
-        const catArray = categoria.split(',').map(c => c.trim()).filter(c => c);
-        
-        // Convertir string de soluciones/filtros a array (NUEVO)
+        const catArray = categoria ? categoria.split(',').map(c => c.trim()).filter(c => c) : [];
         const solArray = soluciones ? soluciones.split(',').map(s => s.trim()).filter(s => s) : [];
         
         let imgUrls = "";
@@ -155,26 +152,25 @@ app.post('/admin/productos', protect, upload.array('imagenes'), async (req, res)
         }
 
         if (edit_id) {
-            const updateData = { 
-                nombre, marca, modelo, descripcion,
-                categoria: catArray, 
-                solucionEspecifica: solArray // Guardamos las soluciones
-            };
+            const updateData = { nombre, marca, modelo, descripcion, categoria: catArray, solucionEspecifica: solArray };
             if (imgUrls) updateData.imagen = imgUrls; 
             await Product.findByIdAndUpdate(edit_id, updateData);
         } else {
-            await Product.create({ 
-                id, nombre, marca, modelo, descripcion, 
-                categoria: catArray, 
-                solucionEspecifica: solArray, // Guardamos las soluciones
-                imagen: imgUrls 
-            });
+            await Product.create({ id, nombre, marca, modelo, descripcion, categoria: catArray, solucionEspecifica: solArray, imagen: imgUrls });
         }
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
-// 2. NOVEDADES (Ahora soporta array 'imagenes')
+// CORRECCIÓN IMPORTANTE: Cambiado a POST para coincidir con el dashboard.ejs
+app.post('/admin/productos/delete/:id', protect, async (req, res) => {
+    try { 
+        await Product.findByIdAndDelete(req.params.id); 
+        res.json({ success: true }); 
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+// 2. NOVEDADES
 app.post('/admin/novedades', protect, upload.array('imagenes'), async (req, res) => {
     try {
         const { titulo, resumen, texto, edit_id } = req.body;
@@ -194,12 +190,15 @@ app.post('/admin/novedades', protect, upload.array('imagenes'), async (req, res)
     } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-app.delete('/admin/novedades/delete/:id', protect, async (req, res) => {
-    try { await News.findByIdAndDelete(req.params.id); res.json({ success: true }); }
-    catch (e) { res.status(500).json({ success: false }); }
+// CORRECCIÓN IMPORTANTE: Cambiado a POST
+app.post('/admin/novedades/delete/:id', protect, async (req, res) => {
+    try { 
+        await News.findByIdAndDelete(req.params.id); 
+        res.json({ success: true }); 
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// 3. EVENTOS (Ahora soporta array 'imagenes')
+// 3. EVENTOS
 app.post('/admin/eventos', protect, upload.array('imagenes'), async (req, res) => {
     try {
         const { titulo, fecha_texto, ubicacion, subtitulo, edit_id } = req.body;
@@ -219,9 +218,12 @@ app.post('/admin/eventos', protect, upload.array('imagenes'), async (req, res) =
     } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-app.delete('/admin/eventos/delete/:id', protect, async (req, res) => {
-    try { await Event.findByIdAndDelete(req.params.id); res.json({ success: true }); }
-    catch (e) { res.status(500).json({ success: false }); }
+// CORRECCIÓN IMPORTANTE: Cambiado a POST
+app.post('/admin/eventos/delete/:id', protect, async (req, res) => {
+    try { 
+        await Event.findByIdAndDelete(req.params.id); 
+        res.json({ success: true }); 
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 const PORT = process.env.PORT || 3000;

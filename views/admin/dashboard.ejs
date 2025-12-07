@@ -32,50 +32,21 @@
         label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; font-size: 14px; }
         input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; font-family: inherit; }
         
-        /* GRID DE ESPECIALIDADES (Checkboxes) */
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-            padding: 15px;
-            background: #fcfcfc;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        .cat-option {
-            display: flex;
-            align-items: center;
-            font-size: 13px;
-            cursor: pointer;
-            color: #444;
-        }
-        .cat-option input {
-            margin-right: 8px;
-            width: 16px;
-            height: 16px;
-            accent-color: var(--color-primario);
-            margin-bottom: 0;
-        }
+        /* GRID DE ESPECIALIDADES */
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; padding: 15px; background: #fcfcfc; border: 1px solid #eee; border-radius: 5px; margin-bottom: 15px; }
+        .cat-option { display: flex; align-items: center; font-size: 13px; cursor: pointer; color: #444; }
+        .cat-option input { margin-right: 8px; width: 16px; height: 16px; accent-color: var(--color-primario); margin-bottom: 0; }
 
         /* Zona de Arrastre */
-        .drop-zone {
-            border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center;
-            cursor: pointer; transition: 0.3s; background: #fafafa; margin-bottom: 15px;
-        }
+        .drop-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: 0.3s; background: #fafafa; margin-bottom: 15px; }
         .drop-zone:hover, .drop-zone.dragover { border-color: var(--color-primario); background: #eef7ff; }
         .drop-zone p { margin: 0; color: #666; font-size: 14px; pointer-events: none; }
         
-        /* Previsualización de Imágenes */
+        /* Previsualización */
         .preview-container { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
         .preview-item { position: relative; width: 80px; height: 80px; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; background: #fff; }
         .preview-item img { width: 100%; height: 100%; object-fit: cover; }
-        .preview-item .btn-remove {
-            position: absolute; top: 2px; right: 2px;
-            background: rgba(231, 76, 60, 0.9); color: white;
-            border: none; border-radius: 50%; width: 20px; height: 20px;
-            cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;
-        }
+        .preview-item .btn-remove { position: absolute; top: 2px; right: 2px; background: rgba(231, 76, 60, 0.9); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
 
         .btn-submit { background: var(--color-acento); color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; transition: 0.3s; }
         .btn-submit:hover { background: #7ab635; }
@@ -89,10 +60,7 @@
         .thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
         
         /* Botones Acción */
-        .btn-action {
-            display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px;
-            border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; margin-right: 5px;
-        }
+        .btn-action { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; margin-right: 5px; }
         .btn-edit { background-color: #e3f2fd; color: var(--color-primario); }
         .btn-edit:hover { background-color: #bbdefb; }
         .btn-delete { background-color: #ffebee; color: var(--danger); }
@@ -130,9 +98,7 @@
                         <div><label>Modelo</label><input type="text" name="modelo" id="prod_modelo"></div>
                         
                         <div class="full-width">
-                            <label style="color: var(--color-primario); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">
-                                1. Especialidades (¿En qué páginas aparecerá?)
-                            </label>
+                            <label style="color: var(--color-primario); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">1. Especialidades (¿En qué páginas aparecerá?)</label>
                             <div class="category-grid">
                                 <label class="cat-option"><input type="checkbox" name="cat_check" value="Anestesia"> Anestesia</label>
                                 <label class="cat-option"><input type="checkbox" name="cat_check" value="Audiología y Equilibrio"> Audiología y Equilibrio</label>
@@ -178,12 +144,7 @@
                 <div class="table-container">
                     <table>
                         <thead>
-                            <tr>
-                                <th>Img</th>
-                                <th>Nombre</th>
-                                <th>Marca</th>
-                                <th>Modelo</th> <th>Acciones</th>
-                            </tr>
+                            <tr><th>Img</th><th>Nombre</th><th>Marca</th><th>Modelo</th><th>Acciones</th></tr>
                         </thead>
                         <tbody>
                             <% productos.forEach(p => { %>
@@ -191,13 +152,10 @@
                                 <td><img src="<%= p.imagen ? p.imagen.split(',')[0] : '/img/favicon.png' %>" class="thumb"></td>
                                 <td><%= p.nombre %></td>
                                 <td><%= p.marca %></td>
-                                <td><%= p.modelo %></td> <td>
-                                    <button class="btn-action btn-edit" onclick="editarProducto('<%= p._id %>')">
-                                        <i class="fas fa-edit"></i> Editar
-                                    </button>
-                                    <button class="btn-action btn-delete" onclick="borrarItem('/admin/productos/delete/<%= p._id %>')">
-                                        <i class="fas fa-trash"></i> Borrar
-                                    </button>
+                                <td><%= p.modelo %></td>
+                                <td>
+                                    <button class="btn-action btn-edit" onclick="editarProducto('<%= p._id %>')"><i class="fas fa-edit"></i> Editar</button>
+                                    <button class="btn-action btn-delete" onclick="borrarItem('/admin/productos/delete/<%= p._id %>')"><i class="fas fa-trash"></i> Borrar</button>
                                 </td>
                             </tr>
                             <% }) %>
@@ -318,8 +276,7 @@
             
             const tipo = id.split('-')[1]; 
             colasDeArchivos[tipo] = [];
-            document.getElementById(`preview-${tipo}`).innerHTML = ''; 
-            
+            document.getElementById(`preview-${tipo}`).innerHTML = '';
             if(tipo === 'producto') {
                 document.querySelectorAll('input[name="cat_check"]').forEach(c => c.checked = false);
             }
@@ -327,7 +284,6 @@
 
         // --- 2. SISTEMA DE ARCHIVOS ACUMULATIVO ---
         const colasDeArchivos = { 'producto': [], 'novedad': [], 'evento': [] };
-
         function setupUploader(tipo) {
             const dropZone = document.getElementById(`drop-${tipo}`);
             const input = document.getElementById(`file-${tipo}`);
@@ -336,12 +292,10 @@
             dropZone.addEventListener('click', (e) => { if(e.target !== input) input.click(); });
             dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
             dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-
             dropZone.addEventListener('drop', (e) => {
                 e.preventDefault(); dropZone.classList.remove('dragover');
                 agregarArchivos(e.dataTransfer.files, tipo, previewContainer);
             });
-
             input.addEventListener('change', () => {
                 agregarArchivos(input.files, tipo, previewContainer);
                 input.value = ''; 
@@ -405,7 +359,6 @@
                     const contentType = res.headers.get("content-type");
                     if (!contentType || !contentType.includes("application/json")) throw new Error("Error en servidor. Verifica conexión/Cloudinary.");
                     const data = await res.json();
-
                     if (data.success) {
                         status.style.color = "green";
                         status.innerText = "✅ ¡Guardado con éxito! Recargando...";
@@ -427,13 +380,23 @@
         conectarFormulario('novedad', '/admin/novedades');
         conectarFormulario('evento', '/admin/eventos');
 
-        // --- 4. UTILIDADES ---
+        // --- 4. UTILIDADES (BORRAR Y EDITAR) ---
+        
         async function borrarItem(url) {
-            if (!confirm("¿Eliminar este ítem?")) return;
+            if (!confirm("¿Estás seguro de que deseas eliminar este ítem permanentemente?")) return;
             try {
-                await fetch(url, { method: 'POST' });
-                window.location.reload();
-            } catch (e) { alert("Error"); }
+                const res = await fetch(url, { method: 'POST' }); // Importante: POST coincide con server.js
+                const data = await res.json();
+                
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert("Error: El servidor no pudo eliminar el ítem.");
+                }
+            } catch (e) { 
+                console.error(e);
+                alert("Error de conexión al intentar borrar."); 
+            }
         }
 
         function editarProducto(id) {
@@ -453,15 +416,14 @@
 
             const categoriasDB = p.categoria || [];
             const catArray = Array.isArray(categoriasDB) ? categoriasDB : (typeof categoriasDB === 'string' ? categoriasDB.split(',').map(s=>s.trim()) : []);
-            
             catArray.forEach(cat => {
                 const chk = document.querySelector(`input[name="cat_check"][value="${cat}"]`);
                 if(chk) chk.checked = true;
             });
-
             colasDeArchivos['producto'] = [];
             document.getElementById('preview-producto').innerHTML = '<small style="color:#1073AC">Edición: Las nuevas imágenes se añadirán.</small>';
             window.scrollTo(0, 0);
+            showSection('productos');
         }
 
         function editarNovedad(id) {
@@ -474,6 +436,7 @@
             document.getElementById('nov_resumen').value = n.resumen;
             document.getElementById('nov_texto').value = n.texto;
             window.scrollTo(0, 0);
+            showSection('novedades');
         }
 
         function editarEvento(id) {
@@ -487,6 +450,7 @@
             document.getElementById('evt_ubicacion').value = e.ubicacion;
             document.getElementById('evt_subtitulo').value = e.subtitulo;
             window.scrollTo(0, 0);
+            showSection('eventos');
         }
     </script>
 
