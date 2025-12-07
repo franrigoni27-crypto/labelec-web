@@ -81,43 +81,85 @@ app.get('/api/novedades/:id', async (req, res) => { try { res.json(await News.fi
 app.get('/api/eventos', async (req, res) => { const evts = await Event.find().sort({ createdAt: -1 }); res.json(evts); });
 
 // --- EMAILS ---
-const createTransporter = () => nodemailer.createTransport({ service: 'gmail', auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS } });
+// Configuración del transporte usando las credenciales del "cartero"
+const createTransporter = () => nodemailer.createTransport({ 
+    host: process.env.SMTP_HOST || 'dtc.ferozo.com', // Fallback por si falta en .env
+    port: process.env.SMTP_PORT || 465,
+    secure: true, // true para 465, false para otros puertos
+    auth: { 
+        user: process.env.EMAIL_USER, 
+        pass: process.env.EMAIL_PASS 
+    } 
+});
 
+// 1. COTIZACIÓN -> Va a VENTAS (ventas + info)
 app.post('/api/cotizar', async (req, res) => {
     const { nombre, email, telefono, mensaje, carrito } = req.body;
     const lista = carrito.map(i => `- ${i.nombre} (${i.marca}) x${i.quantity}`).join('\n');
+    
+    // Define destinos: usa la variable de entorno o un fallback por seguridad
+    const destinos = process.env.DESTINOS_VENTAS || 'ventas@labelec.com,info@labelec.com';
+
     try {
         await createTransporter().sendMail({
-            from: `"Web Labelec" <${process.env.EMAIL_USER}>`, to: 'info@labelec.com', 
-            subject: `Cotización - ${nombre}`, text: `Cliente: ${nombre}\nEmail: ${email}\nTel: ${telefono}\n\nItems:\n${lista}\n\nMensaje: ${mensaje}`
+            from: `"Web Labelec" <${process.env.EMAIL_USER}>`, 
+            to: destinos, 
+            replyTo: email, // Para responder directo al cliente
+            subject: `Cotización - ${nombre}`, 
+            text: `Cliente: ${nombre}\nEmail: ${email}\nTel: ${telefono}\n\nItems solicitados:\n${lista}\n\nMensaje adicional: ${mensaje}`
         });
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
+    } catch (e) { 
+        console.error("Error enviando correo cotización:", e);
+        res.status(500).json({ success: false }); 
+    }
 });
 
+// 2. SOPORTE -> Va a TÉCNICA (info + st1)
 app.post('/api/soporte', async (req, res) => {
     const { nombre, email, equipo, problema } = req.body;
+    
+    // Define destinos
+    const destinos = process.env.DESTINOS_SOPORTE || 'info@labelec.com,st1@labelec.com';
+
     try {
         await createTransporter().sendMail({
-            from: `"Soporte" <${process.env.EMAIL_USER}>`, to: 'info@labelec.com',
-            subject: `Soporte - ${equipo}`, text: `Cliente: ${nombre}\nEmail: ${email}\nEquipo: ${equipo}\nProblema: ${problema}`
+            from: `"Soporte Web" <${process.env.EMAIL_USER}>`, 
+            to: destinos,
+            replyTo: email,
+            subject: `Soporte Técnico - ${equipo}`, 
+            text: `Cliente: ${nombre}\nEmail: ${email}\n\nEquipo: ${equipo}\nDescripción del problema: ${problema}`
         });
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
+    } catch (e) { 
+        console.error("Error enviando correo soporte:", e);
+        res.status(500).json({ success: false }); 
+    }
 });
 
+// 3. ALQUILER -> Va a VENTAS (ventas + info)
 app.post('/api/alquiler', async (req, res) => {
     const { nombre, email, equipo, duracion } = req.body;
+
+    // Define destinos
+    const destinos = process.env.DESTINOS_VENTAS || 'ventas@labelec.com,info@labelec.com';
+
     try {
         await createTransporter().sendMail({
-            from: `"Alquiler" <${process.env.EMAIL_USER}>`, to: 'info@labelec.com',
-            subject: `Alquiler - ${equipo}`, text: `Cliente: ${nombre}\nEmail: ${email}\nEquipo: ${equipo}\nDuración: ${duracion}`
+            from: `"Solicitud Alquiler" <${process.env.EMAIL_USER}>`, 
+            to: destinos,
+            replyTo: email,
+            subject: `Alquiler - ${equipo}`, 
+            text: `Cliente: ${nombre}\nEmail: ${email}\n\nEquipo solicitado: ${equipo}\nDuración estimada: ${duracion}`
         });
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
+    } catch (e) { 
+        console.error("Error enviando correo alquiler:", e);
+        res.status(500).json({ success: false }); 
+    }
 });
 
-
+// Nueva Ruta Historia
 app.get('/historia', (req, res) => res.render('historia', { titulo: 'Nuestra Historia' }));
 
 // --- ADMIN & AUTH ---
@@ -162,7 +204,6 @@ app.post('/admin/productos', protect, upload.array('imagenes'), async (req, res)
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
-// CORRECCIÓN IMPORTANTE: Cambiado a POST para coincidir con el dashboard.ejs
 app.post('/admin/productos/delete/:id', protect, async (req, res) => {
     try { 
         await Product.findByIdAndDelete(req.params.id); 
@@ -190,7 +231,6 @@ app.post('/admin/novedades', protect, upload.array('imagenes'), async (req, res)
     } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-// CORRECCIÓN IMPORTANTE: Cambiado a POST
 app.post('/admin/novedades/delete/:id', protect, async (req, res) => {
     try { 
         await News.findByIdAndDelete(req.params.id); 
@@ -218,7 +258,6 @@ app.post('/admin/eventos', protect, upload.array('imagenes'), async (req, res) =
     } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-// CORRECCIÓN IMPORTANTE: Cambiado a POST
 app.post('/admin/eventos/delete/:id', protect, async (req, res) => {
     try { 
         await Event.findByIdAndDelete(req.params.id); 
