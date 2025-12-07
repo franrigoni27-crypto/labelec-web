@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* Ajustes base para asegurar que el header se comporte bien */
+        /* Ajustes base */
         .header {
             position: sticky; 
             top: 0; 
@@ -24,16 +24,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 80px; /* Altura fija para evitar saltos */
+            height: 80px;
             padding: 0 20px;
         }
 
         .logo img {
-            height: 50px; /* Asegura que el logo no rompa el header */
+            height: 50px;
             width: auto;
         }
 
-        /* Menú de Escritorio (Normal) */
+        /* Menú de Escritorio */
         .nav-menu {
             display: flex;
             list-style: none;
@@ -68,33 +68,38 @@
         /* --- VERSIÓN MÓVIL (Celulares) --- */
         @media screen and (max-width: 900px) {
             
-            /* Mostrar botón hamburguesa */
             .hamburger {
                 display: block;
             }
 
-            /* Ocultar el menú y convertirlo en panel lateral/vertical */
+            /* Panel lateral oculto */
             .nav-menu {
                 position: fixed;
-                left: -100%; /* Lo escondemos a la izquierda */
-                top: 80px;   /* Justo debajo del header */
+                left: -100%;
+                top: 80px;
                 flex-direction: column;
                 background-color: white;
                 width: 100%;
-                height: calc(100vh - 80px); /* Ocupa el resto de la pantalla */
+                height: calc(100vh - 80px);
                 text-align: center;
                 transition: 0.3s ease-in-out;
-                box-shadow: 0 10px 10px rgba(0,0,0,0.1);
                 padding-top: 20px;
                 gap: 0;
+                
+                /* CORRECCIÓN VISUAL (Rayas/Sombras) */
+                visibility: hidden;
+                opacity: 0;
+                box-shadow: none;
             }
 
-            /* Clase activa: Trae el menú a la pantalla */
+            /* Panel visible */
             .nav-menu.active {
                 left: 0;
+                visibility: visible;
+                opacity: 1;
+                box-shadow: 0 10px 10px rgba(0,0,0,0.1);
             }
 
-            /* Estilo de los items en móvil */
             .nav-menu li {
                 width: 100%;
                 border-bottom: 1px solid #f0f0f0;
@@ -106,7 +111,6 @@
                 font-size: 18px;
             }
             
-            /* Ajuste especial para el carrito en móvil */
             #nav-carrito {
                 background: var(--color-primario, #1073AC);
                 color: white !important;
@@ -133,7 +137,7 @@
                     <li><a href="/#especialidades" onclick="closeMenu()">Productos</a></li>
                     <li><a href="/alquileres" onclick="closeMenu()">Alquileres</a></li>
                     <li><a href="/servicio" onclick="closeMenu()">Servicio Técnico</a></li>
-                    <li><a href="/historia" onclick="closeMenu()">Historia</a></li> <li><a href="/#contacto" onclick="closeMenu()">Contacto</a></li>
+                    <li><a href="/#contacto" onclick="closeMenu()">Contacto</a></li>
                     <li><a href="/carrito" id="nav-carrito" onclick="closeMenu()" style="font-weight: 600;">
                         <i class="fas fa-shopping-cart"></i> Cotizar
                     </a></li>
@@ -148,10 +152,8 @@
         const icon = hamburger.querySelector('i');
 
         hamburger.addEventListener('click', () => {
-            // Alternar clase 'active' para mostrar/ocultar
             navMenu.classList.toggle('active');
             
-            // Cambiar ícono de Hamburguesa (bars) a Cruz (times)
             if (navMenu.classList.contains('active')) {
                 icon.classList.remove('fa-bars');
                 icon.classList.add('fa-times');
@@ -161,10 +163,11 @@
             }
         });
 
-        // Función para cerrar el menú al hacer clic en un link (UX)
         function closeMenu() {
             navMenu.classList.remove('active');
             icon.classList.remove('fa-times');
             icon.classList.add('fa-bars');
         }
     </script>
+</body>
+</html>
