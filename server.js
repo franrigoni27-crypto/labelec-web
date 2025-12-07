@@ -86,7 +86,7 @@ app.post('/api/cotizar', async (req, res) => {
     const lista = carrito.map(i => `- ${i.nombre} (${i.marca}) x${i.quantity}`).join('\n');
     try {
         await createTransporter().sendMail({
-            from: `"Web Labelec" <${process.env.EMAIL_USER}>`, to: 'franciscorigoni27@gmail.com', 
+            from: `"Web Labelec" <${process.env.EMAIL_USER}>`, to: 'info@labelec.com', 
             subject: `Cotización - ${nombre}`, text: `Cliente: ${nombre}\nEmail: ${email}\nTel: ${telefono}\n\nItems:\n${lista}\n\nMensaje: ${mensaje}`
         });
         res.json({ success: true });
@@ -97,7 +97,7 @@ app.post('/api/soporte', async (req, res) => {
     const { nombre, email, equipo, problema } = req.body;
     try {
         await createTransporter().sendMail({
-            from: `"Soporte" <${process.env.EMAIL_USER}>`, to: 'franciscorigoni27@gmail.com',
+            from: `"Soporte" <${process.env.EMAIL_USER}>`, to: 'info@labelec.com',
             subject: `Soporte - ${equipo}`, text: `Cliente: ${nombre}\nEmail: ${email}\nEquipo: ${equipo}\nProblema: ${problema}`
         });
         res.json({ success: true });
@@ -108,12 +108,15 @@ app.post('/api/alquiler', async (req, res) => {
     const { nombre, email, equipo, duracion } = req.body;
     try {
         await createTransporter().sendMail({
-            from: `"Alquiler" <${process.env.EMAIL_USER}>`, to: 'franciscorigoni27@gmail.com',
+            from: `"Alquiler" <${process.env.EMAIL_USER}>`, to: 'info@labelec.com',
             subject: `Alquiler - ${equipo}`, text: `Cliente: ${nombre}\nEmail: ${email}\nEquipo: ${equipo}\nDuración: ${duracion}`
         });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false }); }
 });
+
+
+app.get('/historia', (req, res) => res.render('historia', { titulo: 'Nuestra Historia' }));
 
 // --- ADMIN & AUTH ---
 app.get('/admin/login', (req, res) => { if (req.session.userId) return res.redirect('/admin'); res.render('admin/login', { error: null }); });

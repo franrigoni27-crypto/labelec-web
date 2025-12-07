@@ -1,0 +1,262 @@
+<%- include('partials/header') %>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
+
+<style>
+    /* --- Variables y Configuración --- */
+    :root {
+        --timeline-color: var(--color-primario);
+        --card-bg: #fff;
+    }
+
+    /* Hero Section */
+    .history-hero {
+        background: linear-gradient(rgba(16, 115, 172, 0.9), rgba(16, 115, 172, 0.8)), url('/img/historia-hero.jpg');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        text-align: center;
+        padding: 80px 20px;
+        margin-bottom: 60px;
+        border-radius: 0 0 20px 20px;
+    }
+    .history-hero h1 { font-size: 42px; margin-bottom: 15px; }
+    .history-hero p { font-size: 18px; max-width: 700px; margin: 0 auto; opacity: 0.9; }
+
+    /* --- TIMELINE VERTICAL --- */
+    .timeline {
+        position: relative;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    /* La línea central */
+    .timeline::after {
+        content: '';
+        position: absolute;
+        width: 4px;
+        background-color: #e9ecef;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        margin-left: -2px;
+        border-radius: 2px;
+    }
+
+    .timeline-item {
+        padding: 10px 40px;
+        position: relative;
+        background-color: inherit;
+        width: 50%;
+        margin-bottom: 40px;
+    }
+
+    /* Lados */
+    .left { left: 0; text-align: right; }
+    .right { left: 50%; text-align: left; }
+
+    /* Los Puntos (Dots) */
+    .timeline-item::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        right: -10px; /* Para los de la izquierda */
+        background-color: white;
+        border: 4px solid var(--color-acento-servicio);
+        top: 25px;
+        border-radius: 50%;
+        z-index: 1;
+        transition: all 0.3s ease;
+    }
+    .right::after { left: -10px; } /* Para los de la derecha */
+    
+    .timeline-item:hover::after {
+        background-color: var(--color-primario);
+        transform: scale(1.2);
+    }
+
+    /* Tarjetas de Contenido */
+    .content-card {
+        padding: 30px;
+        background-color: white;
+        position: relative;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
+        border-top: 4px solid var(--color-primario);
+    }
+    .content-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    .date-badge {
+        display: inline-block;
+        padding: 5px 15px;
+        background: var(--color-primario);
+        color: white;
+        font-weight: bold;
+        border-radius: 20px;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    .content-card h3 { color: var(--color-primario); margin-bottom: 10px; font-size: 22px; }
+    .content-card p { color: #666; line-height: 1.6; font-size: 15px; }
+
+    /* Imágenes dentro de la tarjeta */
+    .history-img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-top: 15px;
+        cursor: pointer;
+        transition: opacity 0.3s;
+    }
+    .history-img:hover { opacity: 0.9; }
+
+    /* --- GALERÍA DEL RECUERDO (Slider) --- */
+    .memories-section {
+        background: #f9f9f9;
+        padding: 60px 20px;
+        text-align: center;
+        margin-top: 60px;
+    }
+    .swiper-container {
+        width: 100%;
+        max-width: 900px;
+        height: 400px;
+        margin: 40px auto;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .swiper-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* --- RESPONSIVE (Móvil) --- */
+    @media screen and (max-width: 768px) {
+        .timeline::after { left: 31px; }
+        .timeline-item { width: 100%; padding-left: 70px; padding-right: 25px; }
+        .timeline-item::after { left: 21px; }
+        .left { text-align: left; }
+        .right { left: 0; }
+        
+        .history-hero h1 { font-size: 32px; }
+    }
+</style>
+
+<div class="history-hero">
+    <h1>Nuestra Trayectoria</h1>
+    <p>Más de medio siglo dedicados a la ingeniería clínica, la innovación y el servicio. Esta es la historia de cómo Labelec creció junto a la tecnología médica.</p>
+</div>
+
+<main class="container">
+    
+    <div class="timeline">
+        
+        <div class="timeline-item left">
+            <div class="content-card">
+                <span class="date-badge">1968</span>
+                <h3>Los Inicios</h3>
+                <p>Todo comenzó en un pequeño taller familiar. Con herramientas básicas pero una vocación inquebrantable, nos dedicamos a la reparación de electrónica, sentando las bases de lo que sería nuestro ADN técnico.</p>
+                <a href="/img/historia-1.jpg" class="glightbox">
+                    <img src="/img/historia-1.jpg" class="history-img" alt="Taller antiguo" onerror="this.style.display='none'">
+                </a>
+            </div>
+        </div>
+
+        <div class="timeline-item right">
+            <div class="content-card">
+                <span class="date-badge">1985</span>
+                <h3>Especialización Médica</h3>
+                <p>Detectamos una necesidad crítica en la región: el soporte técnico para equipamiento hospitalario. Labelec gira su enfoque 100% hacia la bioingeniería, capacitándonos con las primeras marcas internacionales.</p>
+            </div>
+        </div>
+
+        <div class="timeline-item left">
+            <div class="content-card">
+                <span class="date-badge">1998</span>
+                <h3>Consolidación Regional</h3>
+                <p>Inauguramos nuestra sede central y expandimos nuestro equipo. Nos convertimos en servicio técnico oficial de grandes fabricantes, abarcando desde Entre Ríos hasta provincias vecinas.</p>
+                <a href="/img/historia-2.jpg" class="glightbox">
+                    <img src="/img/historia-2.jpg" class="history-img" alt="Sede antigua" onerror="this.style.display='none'">
+                </a>
+            </div>
+        </div>
+
+        <div class="timeline-item right">
+            <div class="content-card">
+                <span class="date-badge">2010</span>
+                <h3>Era Digital y Distribución</h3>
+                <p>Incorporamos la venta de equipamiento de alta complejidad. No solo reparamos, sino que empezamos a equipar terapias intensivas completas, ofreciendo soluciones llave en mano.</p>
+            </div>
+        </div>
+
+        <div class="timeline-item left">
+            <div class="content-card">
+                <span class="date-badge">Actualidad</span>
+                <h3>Liderazgo e Innovación</h3>
+                <p>Hoy, Labelec es sinónimo de confianza médica. Con un equipo multidisciplinario, software de gestión propio y presencia en los principales congresos, seguimos escribiendo la historia.</p>
+                <a href="/img/nosotros.png" class="glightbox">
+                    <img src="/img/nosotros.png" class="history-img" alt="Equipo actual">
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+<section class="memories-section">
+    <h2 style="color: var(--color-primario); margin-bottom: 10px;">Galería del Recuerdo</h2>
+    <p style="color: #666;">Momentos que marcaron nuestro camino.</p>
+
+    <div class="swiper mySwiper">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide"><img src="/img/historia-slider-1.jpg" onerror="this.src='/img/favicon.png'" alt="Recuerdo 1"></div>
+            <div class="swiper-slide"><img src="/img/historia-slider-2.jpg" onerror="this.src='/img/favicon.png'" alt="Recuerdo 2"></div>
+            <div class="swiper-slide"><img src="/img/historia-slider-3.jpg" onerror="this.src='/img/favicon.png'" alt="Recuerdo 3"></div>
+        </div>
+        <div class="swiper-pagination"></div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+    </div>
+</section>
+
+<script>
+    // Inicializar Swiper (Carrusel)
+    var swiper = new Swiper(".mySwiper", {
+        effect: "coverflow",
+        grabCursor: true,
+        centeredSlides: true,
+        slidesPerView: "auto",
+        coverflowEffect: {
+            rotate: 50,
+            stretch: 0,
+            depth: 100,
+            modifier: 1,
+            slideShadows: true,
+        },
+        pagination: { el: ".swiper-pagination", clickable: true },
+        navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+        autoplay: { delay: 3000 }
+    });
+
+    // Inicializar Lightbox (Zoom en fotos)
+    const lightbox = GLightbox({
+        touchNavigation: true,
+        loop: true
+    });
+</script>
+
+<%- include('partials/footer') %>
