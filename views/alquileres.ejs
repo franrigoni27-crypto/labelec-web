@@ -221,7 +221,7 @@
 
             if (data.success) {
                 status.style.color = "green";
-                status.textContent = "✅ ¡Consulta enviada! Te contactaremos pronto.";
+                status.textContent = " ¡Consulta enviada! Te contactaremos pronto.";
                 form.reset();
                 setTimeout(() => { cerrarModal(); btn.disabled = false; btn.textContent = "Enviar Consulta"; }, 3000);
             } else {
@@ -230,7 +230,7 @@
         } catch (error) {
             console.error(error);
             status.style.color = "red";
-            status.textContent = "❌ Error al enviar. Intenta de nuevo.";
+            status.textContent = " Error al enviar. Intenta de nuevo.";
             btn.disabled = false;
             btn.textContent = "Enviar Consulta";
         }
