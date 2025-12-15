@@ -156,7 +156,7 @@
 
             if (data.success) {
                 status.style.color = "#96C94D";
-                status.textContent = "✅ Solicitud recibida. Un técnico lo contactará a la brevedad.";
+                status.textContent = " Solicitud recibida. Un técnico lo contactará a la brevedad.";
                 form.reset();
                 setTimeout(() => { 
                     status.textContent = ""; 
@@ -169,7 +169,7 @@
         } catch (error) {
             console.error(error);
             status.style.color = "#e74c3c";
-            status.textContent = "❌ Ocurrió un error. Por favor intente más tarde.";
+            status.textContent = " Ocurrió un error. Por favor intente más tarde.";
             btn.disabled = false;
             btn.textContent = "Enviar Solicitud";
         }

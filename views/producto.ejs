@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(typeof actualizarContadorNav === 'function') actualizarContadorNav();
 
             msgConf.style.display = 'block';
-            msgConf.innerHTML = `✅ Agregado al carrito (Total: ${cantidad})`;
+            msgConf.innerHTML = ` Agregado al carrito (Total: ${cantidad})`;
             setTimeout(() => { msgConf.style.display = 'none'; }, 3000);
         };
     }
