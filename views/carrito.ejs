@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         } catch (error) {
             console.error(error);
-            statusMsg.textContent = "❌ Error: " + error.message;
+            statusMsg.textContent = " Error: " + error.message;
             statusMsg.style.color = "red";
             btnEnviar.disabled = false;
             btnEnviar.textContent = textoOriginal;

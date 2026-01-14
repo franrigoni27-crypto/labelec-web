@@ -92,7 +92,7 @@
                 <form id="form-producto">
                     <input type="hidden" name="edit_id" id="prod_edit_id">
                     <div class="form-grid">
-                        <div><label>ID Único (URL)</label><input type="text" name="id" id="prod_id" required placeholder="ej: monitor-mindray"></div>
+                        <div><label>ID Único (URL)</label><input type="text" name="id" id="prod_id" required placeholder="ej: usar un criterio unico"></div>
                         <div><label>Nombre Comercial</label><input type="text" name="nombre" id="prod_nombre" required></div>
                         <div><label>Marca</label><input type="text" name="marca" id="prod_marca" required></div>
                         <div><label>Modelo</label><input type="text" name="modelo" id="prod_modelo"></div>
@@ -256,9 +256,9 @@
     </div>
 
     <script>
-        const DATA_PRODUCTOS = <%- JSON.stringify(productos) %>;
-        const DATA_NOVEDADES = <%- JSON.stringify(novedades) %>;
-        const DATA_EVENTOS = <%- JSON.stringify(eventos) %>;
+        const DATA_PRODUCTOS = <%-JSON.stringify(productos)%>;
+        const DATA_NOVEDADES = <%-JSON.stringify(novedades)%>;
+        const DATA_EVENTOS = <%-JSON.stringify(eventos)%>;
     </script>
 
     <script>
@@ -361,7 +361,7 @@
                     const data = await res.json();
                     if (data.success) {
                         status.style.color = "green";
-                        status.innerText = "✅ ¡Guardado con éxito! Recargando...";
+                        status.innerText = " ¡Guardado con éxito! Recargando...";
                         setTimeout(() => window.location.reload(), 1500);
                     } else {
                         throw new Error(data.message || "Error desconocido");
