@@ -92,7 +92,7 @@
                 <form id="form-producto">
                     <input type="hidden" name="edit_id" id="prod_edit_id">
                     <div class="form-grid">
-                        <div><label>ID Único (URL)</label><input type="text" name="id" id="prod_id" required placeholder="ej: usar un criterio unico"></div>
+                        <div><label>ID Único (URL)</label><input type="text" name="id" id="prod_id" required placeholder="Usar un criterio unico"></div>
                         <div><label>Nombre Comercial</label><input type="text" name="nombre" id="prod_nombre" required></div>
                         <div><label>Marca</label><input type="text" name="marca" id="prod_marca" required></div>
                         <div><label>Modelo</label><input type="text" name="modelo" id="prod_modelo"></div>
@@ -138,6 +138,33 @@
                     <button type="submit" class="btn-submit">Guardar Producto</button>
                     <p class="status-msg" id="status-producto"></p>
                 </form>
+                </div> <div class="card">
+                    <h3><i class="fas fa-search"></i> Buscar y Filtrar</h3>
+                    <div class="form-grid" style="grid-template-columns: 3fr 1fr; align-items: end; gap: 10px;">
+                        <div>
+                            <label>Buscador</label>
+                            <input type="text" id="admin-search-input" placeholder="Escribe nombre, marca, modelo o especialidad..." oninput="filtrarProductos()">
+                        </div>
+                        <div>
+                            <label>Filtrar por Especialidad</label>
+                            <select id="admin-category-filter" onchange="filtrarProductos()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: white;">
+                                <option value="">Ver Todas</option>
+                                </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr><th>Img</th><th>Nombre</th><th>Marca</th><th>Modelo</th><th>Acciones</th></tr>
+                            </thead>
+                            <tbody id="tabla-productos-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             
             <div class="card">
@@ -399,6 +426,48 @@
             }
         }
 
+        function cargarImagenesExistentes(containerId, cadenaDeUrls) {
+            const container = document.getElementById(containerId);
+            // Limpiamos solo mensajes de texto, no borramos inputs nuevos si los hubiera (aunque resetForm limpia todo antes)
+            container.innerHTML = ''; 
+
+            if (!cadenaDeUrls) return;
+
+            const urls = cadenaDeUrls.split(',').filter(u => u.trim() !== '');
+            
+            urls.forEach(url => {
+                const div = document.createElement('div');
+                div.className = 'preview-item existing-item'; // Clase extra para diferenciar
+                div.style.border = "2px solid #1073AC"; // Borde azul para indicar que ya está en el servidor
+                
+                // HTML: Imagen + Botón Borrar + INPUT OCULTO con la URL
+                // El input hidden es la CLAVE: al enviar el form, se envían estos valores.
+                div.innerHTML = `
+                    <img src="${url}" title="Imagen guardada">
+                    <input type="hidden" name="imagenes_existentes" value="${url}">
+                    <button type="button" class="btn-remove" onclick="this.parentElement.remove()">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <div style="position:absolute; bottom:0; left:0; width:100%; display:flex;">
+                        <button type="button" onclick="moverImagen(this, -1)" style="flex:1; background:rgba(0,0,0,0.5); color:white; border:none; cursor:pointer;"><</button>
+                        <button type="button" onclick="moverImagen(this, 1)" style="flex:1; background:rgba(0,0,0,0.5); color:white; border:none; cursor:pointer;">></button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Pequeña función para mover las fotos (reordenar)
+        function moverImagen(btn, direccion) {
+            const item = btn.closest('.preview-item');
+            const container = item.parentElement;
+            if (direccion === -1 && item.previousElementSibling) {
+                container.insertBefore(item, item.previousElementSibling);
+            } else if (direccion === 1 && item.nextElementSibling) {
+                container.insertBefore(item.nextElementSibling, item);
+            }
+        }
+
         function editarProducto(id) {
             resetForm('form-producto');
             const p = DATA_PRODUCTOS.find(item => item._id === id);
@@ -421,7 +490,7 @@
                 if(chk) chk.checked = true;
             });
             colasDeArchivos['producto'] = [];
-            document.getElementById('preview-producto').innerHTML = '<small style="color:#1073AC">Edición: Las nuevas imágenes se añadirán.</small>';
+            cargarImagenesExistentes('preview-producto', p.imagen);
             window.scrollTo(0, 0);
             showSection('productos');
         }
@@ -435,6 +504,8 @@
             document.getElementById('nov_titulo').value = n.titulo;
             document.getElementById('nov_resumen').value = n.resumen;
             document.getElementById('nov_texto').value = n.texto;
+            colasDeArchivos['novedad'] = []; 
+            cargarImagenesExistentes('preview-novedad', n.imagen_url);
             window.scrollTo(0, 0);
             showSection('novedades');
         }
@@ -449,9 +520,167 @@
             document.getElementById('evt_fecha').value = e.fecha_texto;
             document.getElementById('evt_ubicacion').value = e.ubicacion;
             document.getElementById('evt_subtitulo').value = e.subtitulo;
+            colasDeArchivos['evento'] = [];
+            cargarImagenesExistentes('preview-evento', e.imagen_url);
             window.scrollTo(0, 0);
             showSection('eventos');
         }
+        // --- 5. LOGICA DE BÚSQUEDA Y FILTRADO INTELIGENTE ---
+    
+        const searchInput = document.getElementById('admin-search-input');
+        const categoryFilter = document.getElementById('admin-category-filter');
+        const tableBody = document.getElementById('tabla-productos-body');
+
+        // 1. Inicialización: Llenar el select de filtros dinámicamente
+        function inicializarFiltros() {
+            const especialidadesUnicas = new Set();
+            
+            DATA_PRODUCTOS.forEach(p => {
+                // Manejamos el caso de que sea array o string
+                let cats = [];
+                if (Array.isArray(p.categoria)) cats = p.categoria;
+                else if (typeof p.categoria === 'string') cats = p.categoria.split(',').map(s => s.trim());
+                
+                cats.forEach(c => {
+                    if(c) especialidadesUnicas.add(c);
+                });
+            });
+
+            // Ordenamos alfabéticamente y creamos las opciones
+            Array.from(especialidadesUnicas).sort().forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categoryFilter.appendChild(option);
+            });
+            
+            // Renderizar la tabla inicial completa
+            renderTabla(DATA_PRODUCTOS);
+        }
+
+        // 2. Función para dibujar la tabla
+        function renderTabla(lista) {
+            tableBody.innerHTML = '';
+            
+            if (lista.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #666;">No se encontraron resultados para tu búsqueda.</td></tr>`;
+                return;
+            }
+
+            lista.forEach(p => {
+                const imagen = p.imagen ? p.imagen.split(',')[0] : '/img/favicon.png';
+                // Creamos la fila HTML
+                const fila = `
+                    <tr>
+                        <td><img src="${imagen}" class="thumb"></td>
+                        <td><strong>${p.nombre}</strong></td>
+                        <td>${p.marca}</td>
+                        <td>${p.modelo || '-'}</td>
+                        <td>
+                            <button class="btn-action btn-edit" onclick="editarProducto('${p._id}')">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn-action btn-delete" onclick="borrarItem('/admin/productos/delete/${p._id}')">
+                                <i class="fas fa-trash"></i> Borrar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += fila;
+            });
+        }
+
+        // 3. Función Principal de Filtrado
+        function filtrarProductos() {
+            const textoBusqueda = searchInput.value.toLowerCase().trim();
+            let categoriaSeleccionada = categoryFilter.value;
+
+            // LÓGICA INTELIGENTE: Si escriben una categoría exacta, activar el filtro solo
+            const opciones = Array.from(categoryFilter.options).map(o => o.value);
+            // Buscamos si lo que escribió el usuario coincide con alguna especialidad (ej: "Anestesia")
+            const coincidenciaCategoria = opciones.find(opt => opt.toLowerCase() === textoBusqueda);
+            
+            if (coincidenciaCategoria) {
+                categoryFilter.value = coincidenciaCategoria;
+                categoriaSeleccionada = coincidenciaCategoria;
+                // Opcional: Si quieres que al detectarla se borre el texto para dejar solo el filtro:
+                // searchInput.value = ""; 
+            }
+
+            // Filtramos los datos
+            const resultados = DATA_PRODUCTOS.filter(p => {
+                const nombre = (p.nombre || '').toLowerCase();
+                const marca = (p.marca || '').toLowerCase();
+                const modelo = (p.modelo || '').toLowerCase();
+                
+                // Normalizamos categorías del producto
+                let cats = [];
+                if (Array.isArray(p.categoria)) cats = p.categoria;
+                else if (typeof p.categoria === 'string') cats = p.categoria.split(',').map(s => s.trim());
+                const catsString = cats.join(' ').toLowerCase(); // Para buscar texto dentro de las categorías
+
+                // Condición 1: Coincidencia de Texto (busca en nombre, marca, modelo O nombre de la categoría)
+                const matchTexto = nombre.includes(textoBusqueda) || 
+                                marca.includes(textoBusqueda) || 
+                                modelo.includes(textoBusqueda) ||
+                                catsString.includes(textoBusqueda);
+
+                // Condición 2: Coincidencia de Filtro Select
+                const matchFiltro = categoriaSeleccionada === "" || cats.includes(categoriaSeleccionada);
+
+                return matchTexto && matchFiltro;
+            });
+
+            renderTabla(resultados);
+        }
+
+        // Ejecutar al inicio
+        inicializarFiltros();
+
+        document.addEventListener('paste', (e) => {
+            // 1. Obtener los items del portapapeles
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            let archivosParaSubir = [];
+
+            // 2. Buscar solo imágenes
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    archivosParaSubir.push(item.getAsFile());
+                }
+            }
+
+            // Si no hay imágenes (ej: pegaste solo texto), salimos para que el texto se pegue normal
+            if (archivosParaSubir.length === 0) return;
+
+            // 3. Detectar qué sección está activa (Productos, Novedades o Eventos)
+            const seccionActiva = document.querySelector('.section.active');
+            if (!seccionActiva) return;
+
+            // Mapeamos el ID de la sección (plural) al tipo que usa el sistema (singular)
+            let tipo = '';
+            if (seccionActiva.id === 'productos') tipo = 'producto';
+            else if (seccionActiva.id === 'novedades') tipo = 'novedad';
+            else if (seccionActiva.id === 'eventos') tipo = 'evento';
+
+            // 4. Procesar la imagen
+            if (tipo) {
+                e.preventDefault(); // Evita que el navegador intente "pegar" la imagen como archivo binario
+                
+                const container = document.getElementById(`preview-${tipo}`);
+                const dropZone = document.getElementById(`drop-${tipo}`);
+
+                // Usamos tu función existente 'agregarArchivos' que ya maneja la cola, vista previa y borrado
+                agregarArchivos(archivosParaSubir, tipo, container);
+
+                // Feedback Visual: Iluminar el borde del cuadro por un momento
+                dropZone.classList.add('dragover');
+                setTimeout(() => dropZone.classList.remove('dragover'), 500);
+                
+                // Opcional: Scroll suave hacia la zona de fotos para que el usuario vea que se agregó
+                dropZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
     </script>
 
 </body>

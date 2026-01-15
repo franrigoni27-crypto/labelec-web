@@ -80,6 +80,45 @@ app.get('/api/novedades', async (req, res) => { const news = await News.find().s
 app.get('/api/novedades/:id', async (req, res) => { try { res.json(await News.findById(req.params.id)); } catch (e) { res.status(404).json(null); } });
 app.get('/api/eventos', async (req, res) => { const evts = await Event.find().sort({ createdAt: -1 }); res.json(evts); });
 
+// --- BÚSQUEDA GLOBAL ---
+app.get('/buscar', async (req, res) => {
+    try {
+        const query = req.query.q; // Obtenemos el término de la URL (?q=...)
+        
+        if (!query) {
+            return res.render('resultados', { 
+                titulo: 'Resultados de Búsqueda', 
+                productos: [], 
+                busqueda: '' 
+            });
+        }
+
+        // Creamos una expresión regular para buscar sin importar mayúsculas/minúsculas
+        const regex = new RegExp(query, 'i');
+
+        // Buscamos en Nombre, Marca, Modelo O Categoría
+        const productos = await Product.find({
+            $or: [
+                { nombre: regex },
+                { marca: regex },
+                { modelo: regex },
+                { categoria: regex },
+                { solucionEspecifica: regex }
+            ]
+        });
+
+        res.render('resultados', { 
+            titulo: `Resultados para: ${query}`, 
+            productos, 
+            busqueda: query 
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error en el servidor al buscar.');
+    }
+});
+
 // --- EMAILS ---
 // Configuración del transporte usando las credenciales del "cartero"
 const createTransporter = () => nodemailer.createTransport({ 
@@ -187,18 +226,24 @@ app.post('/admin/productos', protect, upload.array('imagenes'), async (req, res)
         const { id, nombre, marca, modelo, categoria, descripcion, edit_id, soluciones } = req.body;
         const catArray = categoria ? categoria.split(',').map(c => c.trim()).filter(c => c) : [];
         const solArray = soluciones ? soluciones.split(',').map(s => s.trim()).filter(s => s) : [];
-        
+
+        let imgsConservadas = req.body.imagenes_existentes || [];
+        if (!Array.isArray(imgsConservadas)) imgsConservadas = [imgsConservadas];
+
+
         let imgUrls = "";
         if (req.files && req.files.length > 0) {
             imgUrls = req.files.map(f => f.path).join(',');
         }
 
+        const imagenFinal = imgsConservadas.concat(imgUrls).join(',');
+
         if (edit_id) {
             const updateData = { nombre, marca, modelo, descripcion, categoria: catArray, solucionEspecifica: solArray };
-            if (imgUrls) updateData.imagen = imgUrls; 
+            if (imagenFinal) updateData.imagen = imagenFinal; 
             await Product.findByIdAndUpdate(edit_id, updateData);
         } else {
-            await Product.create({ id, nombre, marca, modelo, descripcion, categoria: catArray, solucionEspecifica: solArray, imagen: imgUrls });
+            await Product.create({ id, nombre, marca, modelo, descripcion, categoria: catArray, solucionEspecifica: solArray, imagen: imagenFinal });
         }
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
@@ -215,17 +260,20 @@ app.post('/admin/productos/delete/:id', protect, async (req, res) => {
 app.post('/admin/novedades', protect, upload.array('imagenes'), async (req, res) => {
     try {
         const { titulo, resumen, texto, edit_id } = req.body;
-        let imgUrls = "";
+        
+        let imgsConservadas = req.body.imagenes_existentes || [];
+        if (!Array.isArray(imgsConservadas)) imgsConservadas = [imgsConservadas];
+
+        let imgsNuevas = [];
         if (req.files && req.files.length > 0) {
-            imgUrls = req.files.map(f => f.path).join(',');
+            imgsNuevas = req.files.map(f => f.path);
         }
+        const imagenFinal = imgsConservadas.concat(imgsNuevas).join(',');
 
         if (edit_id) {
-            const data = { titulo, resumen, texto };
-            if (imgUrls) data.imagen_url = imgUrls;
-            await News.findByIdAndUpdate(edit_id, data);
+            await News.findByIdAndUpdate(edit_id, { titulo, resumen, texto, imagen_url: imagenFinal });
         } else {
-            await News.create({ titulo, resumen, texto, imagen_url: imgUrls });
+            await News.create({ titulo, resumen, texto, imagen_url: imagenFinal });
         }
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false, message: e.message }); }
@@ -242,17 +290,20 @@ app.post('/admin/novedades/delete/:id', protect, async (req, res) => {
 app.post('/admin/eventos', protect, upload.array('imagenes'), async (req, res) => {
     try {
         const { titulo, fecha_texto, ubicacion, subtitulo, edit_id } = req.body;
-        let imgUrls = "";
+        
+        let imgsConservadas = req.body.imagenes_existentes || [];
+        if (!Array.isArray(imgsConservadas)) imgsConservadas = [imgsConservadas];
+
+        let imgsNuevas = [];
         if (req.files && req.files.length > 0) {
-            imgUrls = req.files.map(f => f.path).join(',');
+            imgsNuevas = req.files.map(f => f.path);
         }
+        const imagenFinal = imgsConservadas.concat(imgsNuevas).join(',');
 
         if (edit_id) {
-            const data = { titulo, fecha_texto, ubicacion, subtitulo };
-            if (imgUrls) data.imagen_url = imgUrls;
-            await Event.findByIdAndUpdate(edit_id, data);
+            await Event.findByIdAndUpdate(edit_id, { titulo, fecha_texto, ubicacion, subtitulo, imagen_url: imagenFinal });
         } else {
-            await Event.create({ titulo, fecha_texto, ubicacion, subtitulo, imagen_url: imgUrls });
+            await Event.create({ titulo, fecha_texto, ubicacion, subtitulo, imagen_url: imagenFinal });
         }
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false, message: e.message }); }

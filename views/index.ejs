@@ -492,6 +492,17 @@
                 searchResults.style.display = 'none';
             }
         });
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Evita que el formulario se envíe si estuviera dentro de uno
+                const termino = searchInput.value.trim();
+                
+                if (termino.length > 0) {
+                    // Redirigir a la nueva página que creamos en el paso 1
+                    window.location.href = `/buscar?q=${encodeURIComponent(termino)}`;
+                }
+            }
+        });
     }
 
     async function cargarNovedades() {
