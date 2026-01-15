@@ -167,29 +167,6 @@
                 </div>
             </div>
             
-            <div class="card">
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr><th>Img</th><th>Nombre</th><th>Marca</th><th>Modelo</th><th>Acciones</th></tr>
-                        </thead>
-                        <tbody>
-                            <% productos.forEach(p => { %>
-                            <tr>
-                                <td><img src="<%= p.imagen ? p.imagen.split(',')[0] : '/img/favicon.png' %>" class="thumb"></td>
-                                <td><%= p.nombre %></td>
-                                <td><%= p.marca %></td>
-                                <td><%= p.modelo %></td>
-                                <td>
-                                    <button class="btn-action btn-edit" onclick="editarProducto('<%= p._id %>')"><i class="fas fa-edit"></i> Editar</button>
-                                    <button class="btn-action btn-delete" onclick="borrarItem('/admin/productos/delete/<%= p._id %>')"><i class="fas fa-trash"></i> Borrar</button>
-                                </td>
-                            </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
         <div id="novedades" class="section">
