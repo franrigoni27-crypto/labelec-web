@@ -85,6 +85,7 @@
 
     <div class="main-content">
         
+        <!-- SECCIÓN PRODUCTOS -->
         <div id="productos" class="section active">
             <h1>Gestión de Productos</h1>
             <div class="card">
@@ -138,40 +139,41 @@
                     <button type="submit" class="btn-submit">Guardar Producto</button>
                     <p class="status-msg" id="status-producto"></p>
                 </form>
-                </div> <div class="card">
-                    <h3><i class="fas fa-search"></i> Buscar y Filtrar</h3>
-                    <div class="form-grid" style="grid-template-columns: 3fr 1fr; align-items: end; gap: 10px;">
-                        <div>
-                            <label>Buscador</label>
-                            <input type="text" id="admin-search-input" placeholder="Escribe nombre, marca, modelo o especialidad..." oninput="filtrarProductos()">
-                        </div>
-                        <div>
-                            <label>Filtrar por Especialidad</label>
-                            <select id="admin-category-filter" onchange="filtrarProductos()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: white;">
-                                <option value="">Ver Todas</option>
-                                </select>
-                        </div>
-                    </div>
-                </div>
+            </div>
 
-                <div class="card">
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr><th>Img</th><th>Nombre</th><th>Marca</th><th>Modelo</th><th>Acciones</th></tr>
-                            </thead>
-                            <tbody id="tabla-productos-body">
-                                </tbody>
-                        </table>
+            <div class="card">
+                <h3><i class="fas fa-search"></i> Buscar y Filtrar</h3>
+                <div class="form-grid" style="grid-template-columns: 3fr 1fr; align-items: end; gap: 10px;">
+                    <div>
+                        <label>Buscador</label>
+                        <input type="text" id="admin-search-input" placeholder="Escribe nombre, marca, modelo o especialidad..." oninput="filtrarProductos()">
+                    </div>
+                    <div>
+                        <label>Filtrar por Especialidad</label>
+                        <select id="admin-category-filter" onchange="filtrarProductos()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: white;">
+                            <option value="">Ver Todas</option>
+                        </select>
                     </div>
                 </div>
             </div>
-            
+
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Img</th><th>Nombre</th><th>Marca</th><th>Modelo</th><th>Acciones</th></tr>
+                        </thead>
+                        <tbody id="tabla-productos-body"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
+        <!-- SECCIÓN NOVEDADES -->
         <div id="novedades" class="section">
             <h1>Gestión de Novedades</h1>
             <div class="card">
+                <h3>Nueva / Editar Novedad</h3>
                 <form id="form-novedad">
                     <input type="hidden" name="edit_id" id="nov_edit_id">
                     <label>Título</label><input type="text" name="titulo" id="nov_titulo" required>
@@ -191,7 +193,9 @@
                     <p class="status-msg" id="status-novedad"></p>
                 </form>
             </div>
+
             <div class="card">
+                <h3>Novedades Registradas</h3>
                 <div class="table-container">
                     <table>
                         <thead><tr><th>Img</th><th>Título</th><th>Acciones</th></tr></thead>
@@ -212,9 +216,11 @@
             </div>
         </div>
 
+        <!-- SECCIÓN EVENTOS -->
         <div id="eventos" class="section">
             <h1>Gestión de Eventos</h1>
             <div class="card">
+                <h3>Nuevo / Editar Evento</h3>
                 <form id="form-evento">
                     <input type="hidden" name="edit_id" id="evt_edit_id">
                     <div class="form-grid">
@@ -236,7 +242,9 @@
                     <p class="status-msg" id="status-evento"></p>
                 </form>
             </div>
+
             <div class="card">
+                <h3>Eventos Registrados</h3>
                 <div class="table-container">
                     <table>
                         <thead><tr><th>Img</th><th>Evento</th><th>Acciones</th></tr></thead>
