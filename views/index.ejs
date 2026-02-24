@@ -125,6 +125,11 @@
     @media (max-width: 900px) { .nosotros-content { flex-direction: column; } }
     @media (max-width: 768px) { .marcas-grid { grid-template-columns: repeat(3, 1fr); gap: 25px; } }
     @media (max-width: 480px) { .marcas-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { 
+        .hero { 
+            background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/img/imagen-principal-celular.png'); 
+        } 
+    }
 </style>
 
 <main>
@@ -136,7 +141,7 @@
 
         <div class="hero-content">
             <h1>Líder Regional en Tecnología Médica</h1>
-            <p>Encuentre el producto medico que necesita.</p>
+            <p>Encuentre el producto médico que necesita.</p>
             
             <div class="search-container">
                 <input type="search" id="search-input" placeholder="Buscar por producto o modelo ">

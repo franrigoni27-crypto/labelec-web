@@ -316,5 +316,37 @@ app.post('/admin/eventos/delete/:id', protect, async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
+app.post('/admin/cambiar-password', protect, async (req, res) => {
+    const { passwordActual, nuevaPassword, confirmarPassword } = req.body;
+
+    // Verificar que las contraseñas nuevas coincidan
+    if (nuevaPassword !== confirmarPassword) {
+        return res.status(400).json({ success: false, message: 'Las contraseñas nuevas no coinciden.' });
+    }
+
+    try {
+        // Buscar al usuario logueado usando la sesión
+        const user = await User.findById(req.session.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+        }
+
+        // Verificar que la contraseña actual ingresada sea correcta
+        const isMatch = await user.matchPassword(passwordActual);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'La contraseña actual es incorrecta.' });
+        }
+
+        // Asignar nueva contraseña (el modelo User.js se encarga de encriptarla automáticamente)
+        user.password = nuevaPassword;
+        await user.save();
+
+        res.json({ success: true, message: 'Contraseña actualizada correctamente.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error en el servidor al cambiar la contraseña.' });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server en puerto ${PORT}`));

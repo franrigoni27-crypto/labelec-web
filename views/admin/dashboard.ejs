@@ -80,6 +80,11 @@
         <button class="menu-btn" onclick="showSection('eventos')"><i class="fas fa-calendar-alt"></i> Eventos</button>
         <div style="margin-top: 50px;">
             <a href="/auth/logout" class="menu-btn" style="background:var(--danger); text-align:center;">Cerrar Sesión</a>
+            
+            <button type="button" class="menu-btn" onclick="abrirModalPassword()" style="background: #444; width: auto; margin: 0; padding: 0 15px; display: flex; align-items: center; justify-content: center;" title="Cambiar Contraseña">
+                <i class="fas fa-cog"></i>
+            </button>
+
         </div>
     </nav>
 
@@ -664,6 +669,94 @@
                 
                 // Opcional: Scroll suave hacia la zona de fotos para que el usuario vea que se agregó
                 dropZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    </script>
+    <div id="modalPassword" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6);">
+        <div style="background-color: #fff; margin: 10% auto; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-family: Arial, sans-serif;">
+            <h3 style="margin-top: 0; color: #333;">Cambiar Contraseña</h3>
+            <form id="formCambiarPassword">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: #555;">Contraseña Actual:</label>
+                    <input type="password" id="passwordActual" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: #555;">Nueva Contraseña:</label>
+                    <input type="password" id="nuevaPassword" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: #555;">Confirmar Nueva Contraseña:</label>
+                    <input type="password" id="confirmarPassword" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                
+                <p id="passwordMsg" style="color: red; font-size: 0.9em; display: none; margin-bottom: 15px;"></p>
+                
+                <div style="text-align: right;">
+                    <button type="button" onclick="cerrarModalPassword()" style="padding: 8px 15px; margin-right: 10px; background-color: #ddd; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                    <button type="submit" style="padding: 8px 15px; background-color: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer;">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modalPw = document.getElementById('modalPassword');
+        const formPw = document.getElementById('formCambiarPassword');
+        const msgPw = document.getElementById('passwordMsg');
+
+        function abrirModalPassword() {
+            modalPw.style.display = 'block';
+            formPw.reset();
+            msgPw.style.display = 'none';
+        }
+
+        function cerrarModalPassword() {
+            modalPw.style.display = 'none';
+        }
+
+        // Cerrar modal si el usuario hace clic fuera de la caja blanca
+        window.addEventListener('click', (e) => {
+            if (e.target === modalPw) {
+                cerrarModalPassword();
+            }
+        });
+
+        formPw.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const passwordActual = document.getElementById('passwordActual').value;
+            const nuevaPassword = document.getElementById('nuevaPassword').value;
+            const confirmarPassword = document.getElementById('confirmarPassword').value;
+
+            // Validación rápida en el navegador antes de enviar al servidor
+            if (nuevaPassword !== confirmarPassword) {
+                msgPw.textContent = 'Las contraseñas nuevas no coinciden.';
+                msgPw.style.color = 'red';
+                msgPw.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/admin/cambiar-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ passwordActual, nuevaPassword, confirmarPassword })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('¡Contraseña cambiada con éxito!');
+                    cerrarModalPassword();
+                } else {
+                    // Mostrar el error que viene del servidor (ej: contraseña actual incorrecta)
+                    msgPw.textContent = data.message;
+                    msgPw.style.color = 'red';
+                    msgPw.style.display = 'block';
+                }
+            } catch (error) {
+                msgPw.textContent = 'Error de conexión con el servidor.';
+                msgPw.style.color = 'red';
+                msgPw.style.display = 'block';
             }
         });
     </script>
