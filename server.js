@@ -20,7 +20,12 @@ const User = require('./models/User');
 
 const app = express();
 connectDB(); 
-
+function normalizarTexto(texto) {
+    return texto
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -55,8 +60,13 @@ app.get('/novedades', (req, res) => res.render('novedades'));
 
 app.get('/categoria/:nombreCategoria', async (req, res) => {
     try {
-        const catSearch = req.params.nombreCategoria.replace(/-/g, ' '); 
-        const productos = await Product.find({ categoria: { $regex: catSearch, $options: 'i' } });
+        const catSearch = req.params.nombreCategoria.replace(/-/g, ' ');
+        const todosLosProductos = await Product.find({});
+        const catSearchNorm = normalizarTexto(catSearch);
+        const productos = todosLosProductos.filter(p => {
+            const cats = Array.isArray(p.categoria) ? p.categoria : [p.categoria];
+            return cats.some(c => normalizarTexto(c || '').includes(catSearchNorm));
+        });
         const filtros = new Set();
         productos.forEach(p => p.solucionEspecifica.forEach(s => filtros.add(s)));
         res.render('categoria', { nombreCategoria: req.params.nombreCategoria, productos, filtrosDisponibles: Array.from(filtros) });
