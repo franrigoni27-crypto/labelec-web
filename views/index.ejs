@@ -194,6 +194,21 @@
             </div>
         </div>
     </section>
+
+    <section class="productos" id="cursos-home" style="background-color: var(--color-fondo-claro); padding-top: 40px;"> 
+        <div class="container">
+            <h2 style="text-align: center; font-size: 36px;">Próximos Cursos</h2>
+            <p style="text-align: center; color: var(--color-secundario); margin-top: 10px; margin-bottom: 20px;">Capacitaciones online sobre tecnología médica. Inscripción gratuita.</p>
+            
+            <div class="product-grid" id="cursos-grid-container">
+                <p style="text-align:center; width:100%">Cargando cursos...</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="/cursos" class="cta-button cta-button-azul-oscuro">Ver todos los cursos</a>
+            </div>
+        </div>
+    </section>
     
     <section class="section-specialties" id="especialidades">
         <div class="container">
@@ -455,6 +470,7 @@
         }
 
         cargarNovedades();
+        cargarCursos();
     });
 
     if(searchInput) {
@@ -560,6 +576,60 @@
         } catch (error) { 
             console.error("Error novedades:", error);
             gridContainer.innerHTML = '<p>Error al cargar noticias.</p>';
+        }
+    }
+
+    async function cargarCursos() {
+        const gridContainer = document.getElementById('cursos-grid-container');
+        if (!gridContainer) return;
+
+        try {
+            const response = await fetch('/api/cursos');
+            if (!response.ok) throw new Error('Error cargando cursos');
+            const cursos = await response.json();
+
+            gridContainer.innerHTML = '';
+            if (cursos.length === 0) {
+                gridContainer.innerHTML = '<p style="text-align:center; width:100%; color:#777">No hay cursos próximos por el momento.</p>';
+                return;
+            }
+
+            // Mostrar los próximos 3 (ya vienen ordenados por fecha asc desde la API)
+            cursos.slice(0, 3).forEach(curso => {
+                const fechaObj = new Date(curso.fecha);
+                const fechaTexto = fechaObj.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+                const horaTexto = fechaObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+                let imagenPortada = curso.imagen_url || '/img/favicon.png';
+                if (imagenPortada && !imagenPortada.startsWith('/') && !imagenPortada.startsWith('http')) {
+                    imagenPortada = '/' + imagenPortada;
+                }
+
+                const descripcionCorta = curso.descripcion.length > 100
+                    ? curso.descripcion.substring(0, 100) + '...'
+                    : curso.descripcion;
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${imagenPortada}" alt="" onerror="this.src='/img/favicon.png'">
+                    <div class="product-card-content">
+                        <p style="font-size: 13px; color: var(--color-acento-servicio); margin-bottom: 5px; font-weight: 600;">📅 ${fechaTexto} - ${horaTexto}hs</p>
+                        <h3 style="font-size: 18px;"></h3>
+                        <p></p>
+                        <a href="/cursos" class="cta-button-secundario">Ver e Inscribirse</a>
+                    </div>
+                `;
+                // Inyectar texto seguro
+                card.querySelector('img').alt = curso.titulo;
+                card.querySelector('h3').textContent = curso.titulo;
+                card.querySelector('.product-card-content p:nth-of-type(2)').textContent = descripcionCorta;
+
+                gridContainer.appendChild(card);
+            });
+        } catch (error) {
+            console.error("Error cursos:", error);
+            gridContainer.innerHTML = '<p>Error al cargar cursos.</p>';
         }
     }
 </script>

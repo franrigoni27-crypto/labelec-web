@@ -78,6 +78,7 @@
         <button class="menu-btn active" onclick="showSection('productos')"><i class="fas fa-box"></i> Productos</button>
         <button class="menu-btn" onclick="showSection('novedades')"><i class="fas fa-newspaper"></i> Novedades</button>
         <button class="menu-btn" onclick="showSection('eventos')"><i class="fas fa-calendar-alt"></i> Eventos</button>
+        <button class="menu-btn" onclick="showSection('cursos')"><i class="fas fa-graduation-cap"></i> Cursos</button>
         <div style="margin-top: 50px;">
             <a href="/auth/logout" class="menu-btn" style="background:var(--danger); text-align:center;">Cerrar Sesión</a>
             
@@ -270,21 +271,117 @@
             </div>
         </div>
 
+        <!-- SECCIÓN CURSOS -->
+        <div id="cursos" class="section">
+            <h1>Gestión de Cursos</h1>
+            <div class="card">
+                <h3>Nuevo / Editar Curso</h3>
+                <form id="form-curso">
+                    <input type="hidden" name="edit_id" id="cur_edit_id">
+                    <div class="form-grid">
+                        <div class="full-width"><label>Título</label><input type="text" name="titulo" id="cur_titulo" required></div>
+                        <div><label>Fecha y Hora</label><input type="datetime-local" name="fecha" id="cur_fecha" required></div>
+                        <div><label>Disertante (opcional)</label><input type="text" name="disertante" id="cur_disertante"></div>
+                        <div class="full-width"><label>Descripción</label><textarea name="descripcion" id="cur_descripcion" rows="3" required></textarea></div>
+                        <div><label>Link de la Reunión (privado, solo admin)</label><input type="text" name="link_reunion" id="cur_link" placeholder="https://meet.google.com/..."></div>
+                        <div><label>Cupo Máximo (vacío = sin límite)</label><input type="number" min="0" name="cupo_maximo" id="cur_cupo" placeholder="Sin límite"></div>
+
+                        <div class="full-width" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: #f9f9f9; border-radius: 5px;">
+                            <input type="checkbox" name="activo" id="cur_activo" checked style="width: 18px; height: 18px; accent-color: var(--color-primario);">
+                            <label for="cur_activo" style="margin: 0; cursor: pointer;">Curso activo (visible en la web)</label>
+                        </div>
+
+                        <div class="full-width">
+                            <label>Imagen de Portada (una sola)</label>
+                            <div class="drop-zone" id="drop-curso">
+                                <p><i class="fas fa-cloud-upload-alt"></i> Arrastra una imagen aquí o haz click</p>
+                                <input type="file" id="file-curso" accept="image/*" style="display:none">
+                            </div>
+                            <div class="preview-container" id="preview-curso"></div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">Guardar Curso</button>
+                    <p class="status-msg" id="status-curso"></p>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Cursos Registrados</h3>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Img</th><th>Título</th><th>Fecha</th><th>Inscriptos</th><th>Estado</th><th>Acciones</th></tr></thead>
+                        <tbody>
+                            <% cursos.forEach(c => { %>
+                            <tr>
+                                <td><img src="<%= c.imagen_url || '/img/favicon.png' %>" class="thumb"></td>
+                                <td><%= c.titulo %></td>
+                                <td><%= c.fecha ? new Date(c.fecha).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '-' %></td>
+                                <td>
+                                    <%= c.inscriptos_count %><% if (c.cupo_maximo > 0) { %> / <%= c.cupo_maximo %><% } %>
+                                </td>
+                                <td>
+                                    <% if (c.activo) { %>
+                                        <span style="color: #2e7d32; font-weight: 600;">● Activo</span>
+                                    <% } else { %>
+                                        <span style="color: #999; font-weight: 600;">● Inactivo</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <button class="btn-action btn-edit" onclick="editarCurso('<%= c._id %>')"><i class="fas fa-edit"></i> Editar</button>
+                                    <button class="btn-action" style="background-color: #e8f5e9; color: #2e7d32;" data-id="<%= c._id %>" data-titulo="<%= c.titulo %>" onclick="verInscriptos(this.dataset.id, this.dataset.titulo)"><i class="fas fa-users"></i> Inscriptos</button>
+                                    <button class="btn-action btn-delete" onclick="borrarItem('/admin/cursos/delete/<%= c._id %>')"><i class="fas fa-trash"></i> Borrar</button>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN INSCRIPTOS DE UN CURSO (oculta hasta entrar a un curso) -->
+        <div id="cursos-inscriptos" class="section">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                <h1 id="ins-titulo-curso">Inscriptos</h1>
+                <div>
+                    <button class="btn-action" style="background-color: #e3f2fd; color: var(--color-primario);" onclick="showSection('cursos')"><i class="fas fa-arrow-left"></i> Volver a Cursos</button>
+                    <button class="btn-action" style="background-color: var(--color-acento); color: white;" id="btn-mailto"><i class="fas fa-envelope"></i> Email a todos</button>
+                    <button class="btn-action" style="background-color: var(--color-primario); color: white;" id="btn-csv"><i class="fas fa-download"></i> Descargar CSV</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Nombre</th><th>Apellido</th><th>Email</th><th>Empresa</th><th>Teléfono</th><th>Fecha Inscripción</th></tr></thead>
+                        <tbody id="tabla-inscriptos-body">
+                            <tr><td colspan="6" style="text-align:center; padding: 20px; color: #666;">Cargando inscriptos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
         const DATA_PRODUCTOS = <%-JSON.stringify(productos)%>;
         const DATA_NOVEDADES = <%-JSON.stringify(novedades)%>;
         const DATA_EVENTOS = <%-JSON.stringify(eventos)%>;
+        const DATA_CURSOS = <%-JSON.stringify(cursos)%>;
     </script>
 
     <script>
         // --- 1. NAVEGACIÓN ---
-        function showSection(id) {
+        function showSection(id, keepActive) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            const target = document.getElementById(id);
+            if (target) target.classList.add('active');
             document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            // Si pasaron un id "padre" lo usamos para marcar el botón sidebar (sirve para sub-vistas como cursos-inscriptos)
+            const idSidebar = keepActive || id;
+            const btnActivo = document.querySelector(`.menu-btn[onclick="showSection('${idSidebar}')"]`);
+            if (btnActivo) btnActivo.classList.add('active');
         }
 
         function resetForm(id) {
@@ -300,7 +397,7 @@
         }
 
         // --- 2. SISTEMA DE ARCHIVOS ACUMULATIVO ---
-        const colasDeArchivos = { 'producto': [], 'novedad': [], 'evento': [] };
+        const colasDeArchivos = { 'producto': [], 'novedad': [], 'evento': [], 'curso': [] };
         function setupUploader(tipo) {
             const dropZone = document.getElementById(`drop-${tipo}`);
             const input = document.getElementById(`file-${tipo}`);
@@ -343,6 +440,7 @@
         setupUploader('producto');
         setupUploader('novedad');
         setupUploader('evento');
+        setupUploader('curso');
 
         // --- 3. ENVÍO DE DATOS ---
         async function conectarFormulario(tipo, urlApi) {
@@ -396,6 +494,7 @@
         conectarFormulario('producto', '/admin/productos');
         conectarFormulario('novedad', '/admin/novedades');
         conectarFormulario('evento', '/admin/eventos');
+        conectarFormulario('curso', '/admin/cursos');
 
         // --- 4. UTILIDADES (BORRAR Y EDITAR) ---
         
@@ -514,6 +613,91 @@
             cargarImagenesExistentes('preview-evento', e.imagen_url);
             window.scrollTo(0, 0);
             showSection('eventos');
+        }
+
+        function editarCurso(id) {
+            resetForm('form-curso');
+            const c = DATA_CURSOS.find(item => item._id === id);
+            if(!c) return alert("Error al cargar curso");
+
+            document.getElementById('cur_edit_id').value = c._id;
+            document.getElementById('cur_titulo').value = c.titulo;
+            document.getElementById('cur_descripcion').value = c.descripcion;
+            document.getElementById('cur_disertante').value = c.disertante || '';
+            document.getElementById('cur_link').value = c.link_reunion || '';
+            document.getElementById('cur_cupo').value = c.cupo_maximo || '';
+            document.getElementById('cur_activo').checked = c.activo !== false;
+
+            // Date → formato datetime-local "YYYY-MM-DDTHH:mm" (con compensación de timezone)
+            if (c.fecha) {
+                const d = new Date(c.fecha);
+                const tzOffset = d.getTimezoneOffset() * 60000;
+                const localISO = new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+                document.getElementById('cur_fecha').value = localISO;
+            }
+
+            colasDeArchivos['curso'] = [];
+            cargarImagenesExistentes('preview-curso', c.imagen_url);
+            window.scrollTo(0, 0);
+            showSection('cursos');
+        }
+
+        // Cache de inscriptos del curso actualmente abierto (usado por mailto y CSV)
+        let inscriptosActuales = [];
+
+        async function verInscriptos(idCurso, tituloCurso) {
+            // Mostramos la sub-vista pero dejamos "Cursos" como tab activa del sidebar
+            showSection('cursos-inscriptos', 'cursos');
+            document.getElementById('ins-titulo-curso').textContent = 'Inscriptos: ' + tituloCurso;
+            const tbody = document.getElementById('tabla-inscriptos-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #666;">Cargando inscriptos...</td></tr>';
+
+            // Botón CSV
+            document.getElementById('btn-csv').onclick = () => {
+                window.location.href = `/admin/cursos/${idCurso}/inscriptos/csv`;
+            };
+
+            try {
+                const res = await fetch(`/admin/cursos/${idCurso}/inscriptos`);
+                const data = await res.json();
+                if (!data.success) throw new Error('Error al cargar inscriptos');
+
+                inscriptosActuales = data.inscriptos;
+
+                // Botón mailto (con BCC para no exponer emails entre inscriptos)
+                document.getElementById('btn-mailto').onclick = () => {
+                    if (inscriptosActuales.length === 0) {
+                        alert('No hay inscriptos para enviarles email.');
+                        return;
+                    }
+                    const emails = inscriptosActuales.map(i => i.email).join(',');
+                    const asunto = encodeURIComponent('Información del curso: ' + tituloCurso);
+                    window.location.href = `mailto:?bcc=${emails}&subject=${asunto}`;
+                };
+
+                if (data.inscriptos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #666;">Todavía no hay inscriptos para este curso.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                data.inscriptos.forEach(i => {
+                    const fila = document.createElement('tr');
+                    const fecha = new Date(i.createdAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+                    fila.innerHTML = `
+                        <td>${i.nombre}</td>
+                        <td>${i.apellido}</td>
+                        <td><a href="mailto:${i.email}" style="color: var(--color-primario);">${i.email}</a></td>
+                        <td>${i.empresa}</td>
+                        <td>${i.telefono}</td>
+                        <td>${fecha}</td>
+                    `;
+                    tbody.appendChild(fila);
+                });
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: red;">Error al cargar inscriptos.</td></tr>';
+            }
         }
         // --- 5. LOGICA DE BÚSQUEDA Y FILTRADO INTELIGENTE ---
     
@@ -652,6 +836,7 @@
             if (seccionActiva.id === 'productos') tipo = 'producto';
             else if (seccionActiva.id === 'novedades') tipo = 'novedad';
             else if (seccionActiva.id === 'eventos') tipo = 'evento';
+            else if (seccionActiva.id === 'cursos') tipo = 'curso';
 
             // 4. Procesar la imagen
             if (tipo) {

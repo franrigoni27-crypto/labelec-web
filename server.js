@@ -17,6 +17,8 @@ const Product = require('./models/Product');
 const News = require('./models/News');
 const Event = require('./models/Event');
 const User = require('./models/User');
+const Course = require('./models/Course');
+const CourseRegistration = require('./models/CourseRegistration');
 
 const app = express();
 connectDB(); 
@@ -57,6 +59,7 @@ app.get('/servicio', (req, res) => res.render('servicio'));
 app.get('/informacion', (req, res) => res.render('informacion'));
 app.get('/carrito', (req, res) => res.render('carrito'));
 app.get('/novedades', (req, res) => res.render('novedades'));
+app.get('/cursos', (req, res) => res.render('cursos'));
 
 app.get('/categoria/:nombreCategoria', async (req, res) => {
     try {
@@ -89,6 +92,70 @@ app.get('/api/productos', async (req, res) => { const prods = await Product.find
 app.get('/api/novedades', async (req, res) => { const news = await News.find().sort({ fecha: -1 }); res.json(news); });
 app.get('/api/novedades/:id', async (req, res) => { try { res.json(await News.findById(req.params.id)); } catch (e) { res.status(404).json(null); } });
 app.get('/api/eventos', async (req, res) => { const evts = await Event.find().sort({ createdAt: -1 }); res.json(evts); });
+
+// CURSOS: solo activos, ordenados por fecha asc (próximos primero). Sin link_reunion (privado).
+app.get('/api/cursos', async (req, res) => {
+    try {
+        const cursos = await Course.find({ activo: true }).select('-link_reunion').sort({ fecha: 1 }).lean();
+        // Agregar conteo de inscriptos para mostrar "Cupo completo" en la UI
+        const cursosConCount = await Promise.all(cursos.map(async (c) => {
+            const inscriptos_count = await CourseRegistration.countDocuments({ curso: c._id });
+            return { ...c, inscriptos_count };
+        }));
+        res.json(cursosConCount);
+    } catch (e) {
+        console.error('Error /api/cursos:', e);
+        res.status(500).json([]);
+    }
+});
+
+// Inscripción a un curso
+app.post('/api/cursos/:id/inscribir', async (req, res) => {
+    try {
+        const { nombre, apellido, email, empresa, telefono } = req.body;
+        if (!nombre || !apellido || !email || !empresa || !telefono) {
+            return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios.' });
+        }
+
+        const curso = await Course.findById(req.params.id);
+        if (!curso || !curso.activo) {
+            return res.status(404).json({ success: false, message: 'Curso no disponible.' });
+        }
+
+        // Validar cupo
+        if (curso.cupo_maximo && curso.cupo_maximo > 0) {
+            const totalInscriptos = await CourseRegistration.countDocuments({ curso: curso._id });
+            if (totalInscriptos >= curso.cupo_maximo) {
+                return res.status(409).json({ success: false, message: 'El cupo de este curso está completo.' });
+            }
+        }
+
+        // Validar duplicado (el índice único es la defensa real, pero damos mensaje claro)
+        const emailNormalizado = email.trim().toLowerCase();
+        const yaInscripto = await CourseRegistration.findOne({ curso: curso._id, email: emailNormalizado });
+        if (yaInscripto) {
+            return res.status(409).json({ success: false, message: 'Ya estás inscripto en este curso.' });
+        }
+
+        await CourseRegistration.create({
+            curso: curso._id,
+            nombre: nombre.trim(),
+            apellido: apellido.trim(),
+            email: emailNormalizado,
+            empresa: empresa.trim(),
+            telefono: telefono.trim()
+        });
+
+        res.json({ success: true, message: '¡Inscripción exitosa! Pronto recibirás más información.' });
+    } catch (e) {
+        // Captura E11000 por si pasa una race condition
+        if (e.code === 11000) {
+            return res.status(409).json({ success: false, message: 'Ya estás inscripto en este curso.' });
+        }
+        console.error('Error inscripción curso:', e);
+        res.status(500).json({ success: false, message: 'Error en el servidor. Intentalo nuevamente.' });
+    }
+});
 
 // --- BÚSQUEDA GLOBAL ---
 app.get('/buscar', async (req, res) => {
@@ -225,7 +292,13 @@ app.get('/admin', protect, async (req, res) => {
     const productos = await Product.find().sort({ createdAt: -1 });
     const novedades = await News.find().sort({ fecha: -1 });
     const eventos = await Event.find().sort({ createdAt: -1 });
-    res.render('admin/dashboard', { productos, novedades, eventos });
+    const cursos = await Course.find().sort({ fecha: 1 }).lean();
+    // Agregar conteo de inscriptos a cada curso (útil para mostrar en la tabla)
+    const cursosConCount = await Promise.all(cursos.map(async (c) => {
+        const inscriptos_count = await CourseRegistration.countDocuments({ curso: c._id });
+        return { ...c, inscriptos_count };
+    }));
+    res.render('admin/dashboard', { productos, novedades, eventos, cursos: cursosConCount });
 });
 
 // --- ABM CON RESPUESTAS JSON (AJAX) Y MULTI-IMAGEN ---
@@ -324,6 +397,111 @@ app.post('/admin/eventos/delete/:id', protect, async (req, res) => {
         await Event.findByIdAndDelete(req.params.id); 
         res.json({ success: true }); 
     } catch (e) { res.status(500).json({ success: false }); }
+});
+
+// 4. CURSOS
+app.post('/admin/cursos', protect, upload.array('imagenes'), async (req, res) => {
+    try {
+        const { titulo, descripcion, fecha, disertante, link_reunion, cupo_maximo, activo, edit_id } = req.body;
+
+        // Imagen existente conservada (al editar)
+        let imgsConservadas = req.body.imagenes_existentes || [];
+        if (!Array.isArray(imgsConservadas)) imgsConservadas = [imgsConservadas];
+
+        // Imagen nueva (solo tomamos la primera, es portada única)
+        let imgNueva = '';
+        if (req.files && req.files.length > 0) {
+            imgNueva = req.files[0].path;
+        }
+
+        // Prioridad: si hay imagen nueva, esa gana; si no, la conservada (o '' si la borraron)
+        const imagenFinal = imgNueva || (imgsConservadas[0] || '');
+
+        const data = {
+            titulo,
+            descripcion,
+            fecha: fecha ? new Date(fecha) : undefined,
+            disertante: disertante || '',
+            link_reunion: link_reunion || '',
+            cupo_maximo: cupo_maximo ? parseInt(cupo_maximo, 10) : 0,
+            activo: activo === 'on' || activo === 'true' || activo === true,
+            imagen_url: imagenFinal
+        };
+
+        if (edit_id) {
+            await Course.findByIdAndUpdate(edit_id, data);
+        } else {
+            await Course.create(data);
+        }
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Error guardando curso:', e);
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+app.post('/admin/cursos/delete/:id', protect, async (req, res) => {
+    try {
+        // Borrado en cascada: primero las inscripciones, luego el curso
+        await CourseRegistration.deleteMany({ curso: req.params.id });
+        await Course.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Error borrando curso:', e);
+        res.status(500).json({ success: false });
+    }
+});
+
+// Lista de inscriptos de un curso (JSON, para el dashboard)
+app.get('/admin/cursos/:id/inscriptos', protect, async (req, res) => {
+    try {
+        const inscriptos = await CourseRegistration.find({ curso: req.params.id }).sort({ createdAt: -1 });
+        res.json({ success: true, inscriptos });
+    } catch (e) {
+        res.status(500).json({ success: false, inscriptos: [] });
+    }
+});
+
+// Descarga CSV de inscriptos
+app.get('/admin/cursos/:id/inscriptos/csv', protect, async (req, res) => {
+    try {
+        const curso = await Course.findById(req.params.id);
+        if (!curso) return res.status(404).send('Curso no encontrado');
+
+        const inscriptos = await CourseRegistration.find({ curso: req.params.id }).sort({ createdAt: -1 });
+
+        // Escape de campos CSV (comas, comillas, saltos de línea)
+        const escapar = (val) => {
+            if (val === null || val === undefined) return '';
+            const s = String(val);
+            if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+                return `"${s.replace(/"/g, '""')}"`;
+            }
+            return s;
+        };
+
+        const cabecera = 'Nombre,Apellido,Email,Empresa,Telefono,Fecha de Inscripcion';
+        const filas = inscriptos.map(i => [
+            escapar(i.nombre),
+            escapar(i.apellido),
+            escapar(i.email),
+            escapar(i.empresa),
+            escapar(i.telefono),
+            escapar(new Date(i.createdAt).toLocaleString('es-AR'))
+        ].join(','));
+
+        // BOM UTF-8 para que Excel abra los acentos correctamente
+        const csv = '\uFEFF' + cabecera + '\n' + filas.join('\n');
+
+        const nombreArchivo = `inscriptos_${curso.titulo.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`;
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+        res.send(csv);
+    } catch (e) {
+        console.error('Error CSV:', e);
+        res.status(500).send('Error generando CSV');
+    }
 });
 
 app.post('/admin/cambiar-password', protect, async (req, res) => {
