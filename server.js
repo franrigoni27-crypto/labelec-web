@@ -11,6 +11,11 @@ const nodemailer = require('nodemailer');
 const connectDB = require('./config/db');
 const { storage } = require('./config/cloudinary'); 
 const upload = multer({ storage }); 
+// Multer en memoria para adjuntos de email (NO van a Cloudinary, se adjuntan directo al correo)
+const uploadMemoria = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 15 * 1024 * 1024 } // 15 MB por archivo
+}); 
 
 // --- Modelos ---
 const Product = require('./models/Product');
@@ -112,8 +117,8 @@ app.get('/api/cursos', async (req, res) => {
 // Inscripción a un curso
 app.post('/api/cursos/:id/inscribir', async (req, res) => {
     try {
-        const { nombre, apellido, email, empresa, telefono } = req.body;
-        if (!nombre || !apellido || !email || !empresa || !telefono) {
+        const { nombre_completo, documento, email, telefono, profesion, institucion } = req.body;
+        if (!nombre_completo || !documento || !email || !telefono || !profesion || !institucion) {
             return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios.' });
         }
 
@@ -139,11 +144,12 @@ app.post('/api/cursos/:id/inscribir', async (req, res) => {
 
         await CourseRegistration.create({
             curso: curso._id,
-            nombre: nombre.trim(),
-            apellido: apellido.trim(),
+            nombre_completo: nombre_completo.trim(),
+            documento: documento.trim(),
             email: emailNormalizado,
-            empresa: empresa.trim(),
-            telefono: telefono.trim()
+            telefono: telefono.trim(),
+            profesion: profesion.trim(),
+            institucion: institucion.trim()
         });
 
         res.json({ success: true, message: '¡Inscripción exitosa! Pronto recibirás más información.' });
@@ -481,13 +487,14 @@ app.get('/admin/cursos/:id/inscriptos/csv', protect, async (req, res) => {
             return s;
         };
 
-        const cabecera = 'Nombre,Apellido,Email,Empresa,Telefono,Fecha de Inscripcion';
+        const cabecera = 'Nombre completo,Documento,Email,Telefono,Profesion,Institucion,Fecha de Inscripcion';
         const filas = inscriptos.map(i => [
-            escapar(i.nombre),
-            escapar(i.apellido),
+            escapar(i.nombre_completo),
+            escapar(i.documento),
             escapar(i.email),
-            escapar(i.empresa),
             escapar(i.telefono),
+            escapar(i.profesion),
+            escapar(i.institucion),
             escapar(new Date(i.createdAt).toLocaleString('es-AR'))
         ].join(','));
 
@@ -501,6 +508,55 @@ app.get('/admin/cursos/:id/inscriptos/csv', protect, async (req, res) => {
     } catch (e) {
         console.error('Error CSV:', e);
         res.status(500).send('Error generando CSV');
+    }
+});
+
+// Enviar email a todos los inscriptos de un curso (con adjuntos)
+app.post('/admin/cursos/:id/enviar-email', protect, uploadMemoria.array('adjuntos'), async (req, res) => {
+    try {
+        const { asunto, cuerpo } = req.body;
+
+        if (!asunto || !cuerpo) {
+            return res.status(400).json({ success: false, message: 'El asunto y el cuerpo son obligatorios.' });
+        }
+
+        const curso = await Course.findById(req.params.id);
+        if (!curso) {
+            return res.status(404).json({ success: false, message: 'Curso no encontrado.' });
+        }
+
+        const inscriptos = await CourseRegistration.find({ curso: req.params.id });
+        if (inscriptos.length === 0) {
+            return res.status(400).json({ success: false, message: 'Este curso no tiene inscriptos.' });
+        }
+
+        // Todos en copia oculta (BCC) para no exponer los emails entre sí
+        const destinatarios = inscriptos.map(i => i.email);
+
+        // Adjuntos desde memoria → formato que entiende nodemailer
+        const attachments = (req.files || []).map(f => ({
+            filename: f.originalname,
+            content: f.buffer,
+            contentType: f.mimetype
+        }));
+
+        // Convertimos saltos de línea a <br> para la versión HTML
+        const cuerpoHtml = cuerpo.replace(/\n/g, '<br>');
+
+        await createTransporter().sendMail({
+            from: `"Labelec Ingeniería" <${process.env.EMAIL_USER}>`,
+            to: process.env.EMAIL_USER,   // remitente como destinatario visible
+            bcc: destinatarios,           // los inscriptos van ocultos
+            subject: asunto,
+            text: cuerpo,
+            html: cuerpoHtml,
+            attachments
+        });
+
+        res.json({ success: true, message: `Email enviado a ${destinatarios.length} inscripto(s) correctamente.` });
+    } catch (e) {
+        console.error('Error enviando email a inscriptos:', e);
+        res.status(500).json({ success: false, message: 'Error al enviar el email. Revisá la configuración de correo.' });
     }
 });
 

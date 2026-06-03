@@ -6,12 +6,12 @@ const CourseRegistrationSchema = new mongoose.Schema({
         ref: 'Course',
         required: true
     },
-    nombre: {
+    nombre_completo: {
         type: String,
         required: true,
         trim: true
     },
-    apellido: {
+    documento: {
         type: String,
         required: true,
         trim: true
@@ -22,12 +22,17 @@ const CourseRegistrationSchema = new mongoose.Schema({
         trim: true,
         lowercase: true
     },
-    empresa: {
+    telefono: {
         type: String,
         required: true,
         trim: true
     },
-    telefono: {
+    profesion: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    institucion: {
         type: String,
         required: true,
         trim: true

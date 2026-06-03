@@ -353,9 +353,9 @@
             <div class="card">
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>Nombre</th><th>Apellido</th><th>Email</th><th>Empresa</th><th>Teléfono</th><th>Fecha Inscripción</th></tr></thead>
+                        <thead><tr><th>Nombre completo</th><th>Documento</th><th>Email</th><th>Teléfono</th><th>Profesión</th><th>Institución</th><th>Fecha Inscripción</th></tr></thead>
                         <tbody id="tabla-inscriptos-body">
-                            <tr><td colspan="6" style="text-align:center; padding: 20px; color: #666;">Cargando inscriptos...</td></tr>
+                            <tr><td colspan="7" style="text-align:center; padding: 20px; color: #666;">Cargando inscriptos...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -650,7 +650,7 @@
             showSection('cursos-inscriptos', 'cursos');
             document.getElementById('ins-titulo-curso').textContent = 'Inscriptos: ' + tituloCurso;
             const tbody = document.getElementById('tabla-inscriptos-body');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #666;">Cargando inscriptos...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #666;">Cargando inscriptos...</td></tr>';
 
             // Botón CSV
             document.getElementById('btn-csv').onclick = () => {
@@ -664,19 +664,17 @@
 
                 inscriptosActuales = data.inscriptos;
 
-                // Botón mailto (con BCC para no exponer emails entre inscriptos)
+                // Botón "Email a todos": abre el modal de redacción
                 document.getElementById('btn-mailto').onclick = () => {
                     if (inscriptosActuales.length === 0) {
                         alert('No hay inscriptos para enviarles email.');
                         return;
                     }
-                    const emails = inscriptosActuales.map(i => i.email).join(',');
-                    const asunto = encodeURIComponent('Información del curso: ' + tituloCurso);
-                    window.location.href = `mailto:?bcc=${emails}&subject=${asunto}`;
+                    abrirModalEmail(idCurso, tituloCurso, inscriptosActuales.length);
                 };
 
                 if (data.inscriptos.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #666;">Todavía no hay inscriptos para este curso.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #666;">Todavía no hay inscriptos para este curso.</td></tr>';
                     return;
                 }
 
@@ -685,18 +683,19 @@
                     const fila = document.createElement('tr');
                     const fecha = new Date(i.createdAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
                     fila.innerHTML = `
-                        <td>${i.nombre}</td>
-                        <td>${i.apellido}</td>
+                        <td>${i.nombre_completo}</td>
+                        <td>${i.documento}</td>
                         <td><a href="mailto:${i.email}" style="color: var(--color-primario);">${i.email}</a></td>
-                        <td>${i.empresa}</td>
                         <td>${i.telefono}</td>
+                        <td>${i.profesion}</td>
+                        <td>${i.institucion}</td>
                         <td>${fecha}</td>
                     `;
                     tbody.appendChild(fila);
                 });
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: red;">Error al cargar inscriptos.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: red;">Error al cargar inscriptos.</td></tr>';
             }
         }
         // --- 5. LOGICA DE BÚSQUEDA Y FILTRADO INTELIGENTE ---
@@ -884,6 +883,41 @@
         </div>
     </div>
 
+    <!-- MODAL ENVIAR EMAIL A INSCRIPTOS -->
+    <div id="modalEmail" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); overflow-y: auto;">
+        <div style="background-color: #fff; margin: 4% auto; padding: 30px; border-radius: 8px; width: 90%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            <h3 style="margin-top: 0; color: var(--color-primario);"><i class="fas fa-envelope"></i> Enviar Email a Inscriptos</h3>
+            <p id="email-info-destinatarios" style="color: #666; font-size: 14px; margin-bottom: 20px;"></p>
+
+            <form id="formEnviarEmail">
+                <input type="hidden" id="email-curso-id">
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">Asunto *</label>
+                    <input type="text" id="email-asunto" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;">
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">Cuerpo del mensaje *</label>
+                    <textarea id="email-cuerpo" required rows="8" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; resize: vertical;"></textarea>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">Adjuntar archivos (opcional)</label>
+                    <input type="file" id="email-adjuntos" multiple style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; background: #fafafa;">
+                    <small style="color: #999;">Máximo 15 MB por archivo.</small>
+                </div>
+
+                <p id="email-status" style="text-align: center; font-weight: 600; min-height: 20px; margin-bottom: 15px;"></p>
+
+                <div style="text-align: right;">
+                    <button type="button" onclick="cerrarModalEmail()" style="padding: 10px 18px; margin-right: 10px; background-color: #ddd; border: none; border-radius: 5px; cursor: pointer;">Cancelar</button>
+                    <button type="submit" id="btn-enviar-email" style="padding: 10px 18px; background-color: var(--color-acento); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;"><i class="fas fa-paper-plane"></i> Enviar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const modalPw = document.getElementById('modalPassword');
         const formPw = document.getElementById('formCambiarPassword');
@@ -942,6 +976,87 @@
                 msgPw.textContent = 'Error de conexión con el servidor.';
                 msgPw.style.color = 'red';
                 msgPw.style.display = 'block';
+            }
+        });
+    </script>
+
+    <script>
+        // --- MODAL ENVIAR EMAIL ---
+        const modalEmail = document.getElementById('modalEmail');
+        const formEmail = document.getElementById('formEnviarEmail');
+
+        function abrirModalEmail(idCurso, tituloCurso, cantidadInscriptos) {
+            document.getElementById('email-curso-id').value = idCurso;
+            document.getElementById('email-info-destinatarios').textContent =
+                `Se enviará a ${cantidadInscriptos} inscripto(s) del curso "${tituloCurso}" (en copia oculta).`;
+            document.getElementById('email-asunto').value = 'Información del curso: ' + tituloCurso;
+            document.getElementById('email-cuerpo').value = '';
+            document.getElementById('email-adjuntos').value = '';
+            document.getElementById('email-status').textContent = '';
+            const btn = document.getElementById('btn-enviar-email');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
+            modalEmail.style.display = 'block';
+        }
+
+        function cerrarModalEmail() {
+            modalEmail.style.display = 'none';
+        }
+
+        // Cerrar al clic en el fondo
+        window.addEventListener('click', (e) => {
+            if (e.target === modalEmail) cerrarModalEmail();
+        });
+
+        formEmail.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idCurso = document.getElementById('email-curso-id').value;
+            const btn = document.getElementById('btn-enviar-email');
+            const status = document.getElementById('email-status');
+
+            const formData = new FormData();
+            formData.append('asunto', document.getElementById('email-asunto').value);
+            formData.append('cuerpo', document.getElementById('email-cuerpo').value);
+
+            const archivos = document.getElementById('email-adjuntos').files;
+            for (let i = 0; i < archivos.length; i++) {
+                formData.append('adjuntos', archivos[i]);
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = 'Enviando...';
+            status.style.color = '#666';
+            status.textContent = 'Enviando emails, aguardá un momento...';
+
+            try {
+                const res = await fetch(`/admin/cursos/${idCurso}/enviar-email`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // Si el servidor no devuelve JSON, suele ser un adjunto rechazado por tamaño
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('El servidor rechazó la solicitud (¿algún archivo supera los 15 MB?).');
+                }
+
+                const data = await res.json();
+                if (data.success) {
+                    status.style.color = 'green';
+                    status.textContent = '✓ ' + data.message;
+                    setTimeout(cerrarModalEmail, 2500);
+                } else {
+                    status.style.color = '#e74c3c';
+                    status.textContent = '✗ ' + data.message;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Reintentar';
+                }
+            } catch (err) {
+                console.error(err);
+                status.style.color = '#e74c3c';
+                status.textContent = '✗ ' + err.message;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Reintentar';
             }
         });
     </script>
