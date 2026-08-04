@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 
-const CourseRegistrationSchema = new mongoose.Schema({
+// Registro de accesos a cursos PASADOS (desbloqueo de contenido).
+// Es una lista SEPARADA de las inscripciones (CourseRegistration).
+const CourseAccessSchema = new mongoose.Schema({
     curso: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course',
@@ -53,7 +55,7 @@ const CourseRegistrationSchema = new mongoose.Schema({
     }
 });
 
-// Índice único compuesto: bloquea inscripciones duplicadas (mismo email en mismo curso)
-CourseRegistrationSchema.index({ curso: 1, email: 1 }, { unique: true });
+// Índice único: un mismo email cuenta una sola vez por curso (los repetidos NO se duplican)
+CourseAccessSchema.index({ curso: 1, email: 1 }, { unique: true });
 
-module.exports = mongoose.model('CourseRegistration', CourseRegistrationSchema);
+module.exports = mongoose.model('CourseAccess', CourseAccessSchema);

@@ -24,6 +24,7 @@ const Event = require('./models/Event');
 const User = require('./models/User');
 const Course = require('./models/Course');
 const CourseRegistration = require('./models/CourseRegistration');
+const CourseAccess = require('./models/CourseAccess');
 
 const app = express();
 connectDB(); 
@@ -98,14 +99,20 @@ app.get('/api/novedades', async (req, res) => { const news = await News.find().s
 app.get('/api/novedades/:id', async (req, res) => { try { res.json(await News.findById(req.params.id)); } catch (e) { res.status(404).json(null); } });
 app.get('/api/eventos', async (req, res) => { const evts = await Event.find().sort({ createdAt: -1 }); res.json(evts); });
 
-// CURSOS: solo activos, ordenados por fecha asc (próximos primero). Sin link_reunion (privado).
+// CURSOS: solo activos, ordenados por fecha asc (próximos primero).
+// Se ocultan link_reunion y el contenido de cursos pasados (nunca viaja en el listado público:
+// el contenido solo se entrega tras desbloquear en POST /api/cursos/:id/desbloquear).
 app.get('/api/cursos', async (req, res) => {
     try {
-        const cursos = await Course.find({ activo: true }).select('-link_reunion').sort({ fecha: 1 }).lean();
-        // Agregar conteo de inscriptos para mostrar "Cupo completo" en la UI
+        const cursos = await Course.find({ activo: true })
+            .select('-link_reunion -contenido_mensaje -contenido_imagenes -contenido_links')
+            .sort({ fecha: 1 })
+            .lean();
+        // Agregar conteo según el tipo: inscriptos para próximos, accesos para pasados
         const cursosConCount = await Promise.all(cursos.map(async (c) => {
             const inscriptos_count = await CourseRegistration.countDocuments({ curso: c._id });
-            return { ...c, inscriptos_count };
+            const accesos_count = await CourseAccess.countDocuments({ curso: c._id });
+            return { ...c, inscriptos_count, accesos_count };
         }));
         res.json(cursosConCount);
     } catch (e) {
@@ -117,8 +124,8 @@ app.get('/api/cursos', async (req, res) => {
 // Inscripción a un curso
 app.post('/api/cursos/:id/inscribir', async (req, res) => {
     try {
-        const { nombre_completo, documento, email, telefono, profesion, institucion } = req.body;
-        if (!nombre_completo || !documento || !email || !telefono || !profesion || !institucion) {
+        const { apellido, nombre, documento, email, telefono, ciudad_provincia, profesion, institucion } = req.body;
+        if (!apellido || !nombre || !documento || !email || !telefono || !ciudad_provincia || !profesion || !institucion) {
             return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios.' });
         }
 
@@ -144,10 +151,12 @@ app.post('/api/cursos/:id/inscribir', async (req, res) => {
 
         await CourseRegistration.create({
             curso: curso._id,
-            nombre_completo: nombre_completo.trim(),
+            apellido: apellido.trim(),
+            nombre: nombre.trim(),
             documento: documento.trim(),
             email: emailNormalizado,
             telefono: telefono.trim(),
+            ciudad_provincia: ciudad_provincia.trim(),
             profesion: profesion.trim(),
             institucion: institucion.trim()
         });
@@ -159,6 +168,59 @@ app.post('/api/cursos/:id/inscribir', async (req, res) => {
             return res.status(409).json({ success: false, message: 'Ya estás inscripto en este curso.' });
         }
         console.error('Error inscripción curso:', e);
+        res.status(500).json({ success: false, message: 'Error en el servidor. Intentalo nuevamente.' });
+    }
+});
+
+// Desbloqueo de contenido de un CURSO PASADO
+// Guarda al usuario en la lista de accesos (separada de inscriptos) y devuelve el contenido.
+// Si el email ya desbloqueó antes, NO se duplica: se lo trata como repetido y se le devuelve el contenido igual.
+app.post('/api/cursos/:id/desbloquear', async (req, res) => {
+    try {
+        const { apellido, nombre, documento, email, telefono, ciudad_provincia, profesion, institucion } = req.body;
+        if (!apellido || !nombre || !documento || !email || !telefono || !ciudad_provincia || !profesion || !institucion) {
+            return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios.' });
+        }
+
+        const curso = await Course.findById(req.params.id);
+        if (!curso || !curso.activo || !curso.es_pasado) {
+            return res.status(404).json({ success: false, message: 'Contenido no disponible.' });
+        }
+
+        const emailNormalizado = email.trim().toLowerCase();
+
+        // Registrar el acceso solo si es la primera vez de este email (repetidos NO se agregan)
+        const yaAccedio = await CourseAccess.findOne({ curso: curso._id, email: emailNormalizado });
+        if (!yaAccedio) {
+            try {
+                await CourseAccess.create({
+                    curso: curso._id,
+                    apellido: apellido.trim(),
+                    nombre: nombre.trim(),
+                    documento: documento.trim(),
+                    email: emailNormalizado,
+                    telefono: telefono.trim(),
+                    ciudad_provincia: ciudad_provincia.trim(),
+                    profesion: profesion.trim(),
+                    institucion: institucion.trim()
+                });
+            } catch (err) {
+                // Si por una race condition saltó el índice único, lo ignoramos: igual entregamos el contenido
+                if (err.code !== 11000) throw err;
+            }
+        }
+
+        // Entregar el contenido desbloqueado
+        res.json({
+            success: true,
+            contenido: {
+                mensaje: curso.contenido_mensaje || '',
+                imagenes: curso.contenido_imagenes || [],
+                links: curso.contenido_links || []
+            }
+        });
+    } catch (e) {
+        console.error('Error desbloqueo curso:', e);
         res.status(500).json({ success: false, message: 'Error en el servidor. Intentalo nuevamente.' });
     }
 });
@@ -406,22 +468,55 @@ app.post('/admin/eventos/delete/:id', protect, async (req, res) => {
 });
 
 // 4. CURSOS
-app.post('/admin/cursos', protect, upload.array('imagenes'), async (req, res) => {
+// upload.fields: 'imagenes' = portada única | 'contenido_imagenes_files' = galería del contenido pasado
+app.post('/admin/cursos', protect, upload.fields([
+    { name: 'imagenes', maxCount: 10 },
+    { name: 'contenido_imagenes_files', maxCount: 20 }
+]), async (req, res) => {
     try {
-        const { titulo, descripcion, fecha, disertante, link_reunion, cupo_maximo, activo, edit_id } = req.body;
+        const { titulo, descripcion, fecha, disertante, link_reunion, cupo_maximo, activo, es_pasado, contenido_mensaje, edit_id } = req.body;
 
-        // Imagen existente conservada (al editar)
+        // --- PORTADA (una sola) ---
         let imgsConservadas = req.body.imagenes_existentes || [];
         if (!Array.isArray(imgsConservadas)) imgsConservadas = [imgsConservadas];
 
-        // Imagen nueva (solo tomamos la primera, es portada única)
         let imgNueva = '';
-        if (req.files && req.files.length > 0) {
-            imgNueva = req.files[0].path;
+        if (req.files && req.files['imagenes'] && req.files['imagenes'].length > 0) {
+            imgNueva = req.files['imagenes'][0].path;
+        }
+        const imagenFinal = imgNueva || (imgsConservadas[0] || '');
+
+        // --- GALERÍA DE CONTENIDO (varias) ---
+        // Conservadas al editar (inputs hidden name="contenido_imagenes_existentes")
+        let galeriaConservada = req.body.contenido_imagenes_existentes || [];
+        if (!Array.isArray(galeriaConservada)) galeriaConservada = [galeriaConservada];
+        galeriaConservada = galeriaConservada.filter(u => u && u.trim() !== '');
+
+        // Nuevas subidas a Cloudinary
+        let galeriaNueva = [];
+        if (req.files && req.files['contenido_imagenes_files']) {
+            galeriaNueva = req.files['contenido_imagenes_files'].map(f => f.path);
+        }
+        const contenidoImagenes = [...galeriaConservada, ...galeriaNueva];
+
+        // --- LINKS DE INTERÉS (título + url) ---
+        // Llegan como arrays paralelos: contenido_link_titulo[] y contenido_link_url[]
+        let titulosLinks = req.body['contenido_link_titulo'] || [];
+        let urlsLinks = req.body['contenido_link_url'] || [];
+        if (!Array.isArray(titulosLinks)) titulosLinks = [titulosLinks];
+        if (!Array.isArray(urlsLinks)) urlsLinks = [urlsLinks];
+
+        const contenidoLinks = [];
+        for (let i = 0; i < urlsLinks.length; i++) {
+            const url = (urlsLinks[i] || '').trim();
+            if (url === '') continue; // ignoramos filas vacías
+            contenidoLinks.push({
+                titulo: (titulosLinks[i] || '').trim(),
+                url
+            });
         }
 
-        // Prioridad: si hay imagen nueva, esa gana; si no, la conservada (o '' si la borraron)
-        const imagenFinal = imgNueva || (imgsConservadas[0] || '');
+        const esPasadoBool = es_pasado === 'on' || es_pasado === 'true' || es_pasado === true;
 
         const data = {
             titulo,
@@ -431,7 +526,11 @@ app.post('/admin/cursos', protect, upload.array('imagenes'), async (req, res) =>
             link_reunion: link_reunion || '',
             cupo_maximo: cupo_maximo ? parseInt(cupo_maximo, 10) : 0,
             activo: activo === 'on' || activo === 'true' || activo === true,
-            imagen_url: imagenFinal
+            imagen_url: imagenFinal,
+            es_pasado: esPasadoBool,
+            contenido_mensaje: contenido_mensaje || '',
+            contenido_imagenes: contenidoImagenes,
+            contenido_links: contenidoLinks
         };
 
         if (edit_id) {
@@ -449,8 +548,9 @@ app.post('/admin/cursos', protect, upload.array('imagenes'), async (req, res) =>
 
 app.post('/admin/cursos/delete/:id', protect, async (req, res) => {
     try {
-        // Borrado en cascada: primero las inscripciones, luego el curso
+        // Borrado en cascada: inscripciones, accesos, luego el curso
         await CourseRegistration.deleteMany({ curso: req.params.id });
+        await CourseAccess.deleteMany({ curso: req.params.id });
         await Course.findByIdAndDelete(req.params.id);
         res.json({ success: true });
     } catch (e) {
@@ -487,12 +587,14 @@ app.get('/admin/cursos/:id/inscriptos/csv', protect, async (req, res) => {
             return s;
         };
 
-        const cabecera = 'Nombre completo,Documento,Email,Telefono,Profesion,Institucion,Fecha de Inscripcion';
+        const cabecera = 'Apellido,Nombre,Documento,Email,Telefono,Ciudad o Provincia,Profesion,Institucion,Fecha de Inscripcion';
         const filas = inscriptos.map(i => [
-            escapar(i.nombre_completo),
+            escapar(i.apellido),
+            escapar(i.nombre),
             escapar(i.documento),
             escapar(i.email),
             escapar(i.telefono),
+            escapar(i.ciudad_provincia),
             escapar(i.profesion),
             escapar(i.institucion),
             escapar(new Date(i.createdAt).toLocaleString('es-AR'))
@@ -507,6 +609,58 @@ app.get('/admin/cursos/:id/inscriptos/csv', protect, async (req, res) => {
         res.send(csv);
     } catch (e) {
         console.error('Error CSV:', e);
+        res.status(500).send('Error generando CSV');
+    }
+});
+
+// Lista de accesos (desbloqueos de contenido pasado) de un curso — JSON para el dashboard
+app.get('/admin/cursos/:id/accesos', protect, async (req, res) => {
+    try {
+        const accesos = await CourseAccess.find({ curso: req.params.id }).sort({ createdAt: -1 });
+        res.json({ success: true, accesos });
+    } catch (e) {
+        res.status(500).json({ success: false, accesos: [] });
+    }
+});
+
+// Descarga CSV de accesos
+app.get('/admin/cursos/:id/accesos/csv', protect, async (req, res) => {
+    try {
+        const curso = await Course.findById(req.params.id);
+        if (!curso) return res.status(404).send('Curso no encontrado');
+
+        const accesos = await CourseAccess.find({ curso: req.params.id }).sort({ createdAt: -1 });
+
+        const escapar = (val) => {
+            if (val === null || val === undefined) return '';
+            const s = String(val);
+            if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+                return `"${s.replace(/"/g, '""')}"`;
+            }
+            return s;
+        };
+
+        const cabecera = 'Apellido,Nombre,Documento,Email,Telefono,Ciudad o Provincia,Profesion,Institucion,Fecha de Acceso';
+        const filas = accesos.map(i => [
+            escapar(i.apellido),
+            escapar(i.nombre),
+            escapar(i.documento),
+            escapar(i.email),
+            escapar(i.telefono),
+            escapar(i.ciudad_provincia),
+            escapar(i.profesion),
+            escapar(i.institucion),
+            escapar(new Date(i.createdAt).toLocaleString('es-AR'))
+        ].join(','));
+
+        const csv = '\uFEFF' + cabecera + '\n' + filas.join('\n');
+
+        const nombreArchivo = `accesos_${curso.titulo.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`;
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+        res.send(csv);
+    } catch (e) {
+        console.error('Error CSV accesos:', e);
         res.status(500).send('Error generando CSV');
     }
 });

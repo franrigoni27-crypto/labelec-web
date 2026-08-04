@@ -39,6 +39,29 @@ const CourseSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    // Switch manual: false = curso próximo (inscripción normal), true = curso pasado (contenido desbloqueable)
+    es_pasado: {
+        type: Boolean,
+        default: false
+    },
+    // --- Contenido que se desbloquea al completar el formulario (solo cursos pasados) ---
+    contenido_mensaje: {
+        type: String,
+        default: ''
+    },
+    // Galería de imágenes (URLs de Cloudinary)
+    contenido_imagenes: {
+        type: [String],
+        default: []
+    },
+    // Links de interés con etiqueta (Grabación, Drive, video, etc.)
+    contenido_links: {
+        type: [{
+            titulo: { type: String, default: '' },
+            url: { type: String, default: '' }
+        }],
+        default: []
+    },
     createdAt: {
         type: Date,
         default: Date.now

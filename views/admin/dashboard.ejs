@@ -291,6 +291,14 @@
                             <label for="cur_activo" style="margin: 0; cursor: pointer;">Curso activo (visible en la web)</label>
                         </div>
 
+                        <!-- SWITCH próximo / pasado -->
+                        <div class="full-width" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: #fff4e5; border: 1px solid #ffd8a8; border-radius: 5px;">
+                            <input type="checkbox" name="es_pasado" id="cur_es_pasado" style="width: 18px; height: 18px; accent-color: #e67700;">
+                            <label for="cur_es_pasado" style="margin: 0; cursor: pointer;">
+                                <strong>Curso pasado</strong> (en la web el botón dirá "Ver capacitación pasada" y se desbloquea contenido al completar el formulario)
+                            </label>
+                        </div>
+
                         <div class="full-width">
                             <label>Imagen de Portada (una sola)</label>
                             <div class="drop-zone" id="drop-curso">
@@ -298,6 +306,28 @@
                                 <input type="file" id="file-curso" accept="image/*" style="display:none">
                             </div>
                             <div class="preview-container" id="preview-curso"></div>
+                        </div>
+
+                        <!-- BLOQUE DE CONTENIDO PASADO (se muestra solo si "Curso pasado" está activo) -->
+                        <div class="full-width" id="bloque-contenido-pasado" style="display:none; border: 2px dashed #ffd8a8; border-radius: 8px; padding: 20px; background: #fffdfa;">
+                            <h4 style="margin-top:0; color:#e67700;"><i class="fas fa-lock-open"></i> Contenido a desbloquear</h4>
+                            <p style="font-size:13px; color:#888; margin-top:-8px;">Esto es lo que verá el usuario luego de completar el formulario de la capacitación pasada.</p>
+
+                            <label>Mensaje</label>
+                            <textarea name="contenido_mensaje" id="cur_contenido_mensaje" rows="3" placeholder="Ej: ¡Gracias por tu interés! Aquí tenés la grabación y los materiales."></textarea>
+
+                            <label style="margin-top:10px; display:block;">Galería de imágenes (opcional, varias)</label>
+                            <div class="drop-zone" id="drop-contenido">
+                                <p><i class="fas fa-cloud-upload-alt"></i> Arrastra imágenes aquí o haz click</p>
+                                <input type="file" id="file-contenido" accept="image/*" multiple style="display:none">
+                            </div>
+                            <div class="preview-container" id="preview-contenido"></div>
+
+                            <label style="margin-top:15px; display:block;">Links de interés (Grabación, Drive, video, etc.)</label>
+                            <div id="contenido-links-container"></div>
+                            <button type="button" class="btn-action" style="background:#e3f2fd; color:var(--color-primario); margin-top:5px;" onclick="agregarFilaLink()">
+                                <i class="fas fa-plus"></i> Agregar link
+                            </button>
                         </div>
                     </div>
                     <button type="submit" class="btn-submit">Guardar Curso</button>
@@ -325,10 +355,16 @@
                                     <% } else { %>
                                         <span style="color: #999; font-weight: 600;">● Inactivo</span>
                                     <% } %>
+                                    <% if (c.es_pasado) { %>
+                                        <br><span style="color: #e67700; font-weight: 600; font-size: 12px;">⏱ Pasado</span>
+                                    <% } %>
                                 </td>
                                 <td>
                                     <button class="btn-action btn-edit" onclick="editarCurso('<%= c._id %>')"><i class="fas fa-edit"></i> Editar</button>
                                     <button class="btn-action" style="background-color: #e8f5e9; color: #2e7d32;" data-id="<%= c._id %>" data-titulo="<%= c.titulo %>" onclick="verInscriptos(this.dataset.id, this.dataset.titulo)"><i class="fas fa-users"></i> Inscriptos</button>
+                                    <% if (c.es_pasado) { %>
+                                    <button class="btn-action" style="background-color: #fff4e5; color: #e67700;" data-id="<%= c._id %>" data-titulo="<%= c.titulo %>" onclick="verAccesos(this.dataset.id, this.dataset.titulo)"><i class="fas fa-lock-open"></i> Accesos</button>
+                                    <% } %>
                                     <button class="btn-action btn-delete" onclick="borrarItem('/admin/cursos/delete/<%= c._id %>')"><i class="fas fa-trash"></i> Borrar</button>
                                 </td>
                             </tr>
@@ -353,9 +389,31 @@
             <div class="card">
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>Nombre completo</th><th>Documento</th><th>Email</th><th>Teléfono</th><th>Profesión</th><th>Institución</th><th>Fecha Inscripción</th></tr></thead>
+                        <thead><tr><th>Apellido</th><th>Nombre</th><th>Documento</th><th>Email</th><th>Teléfono</th><th>Ciudad/Provincia</th><th>Profesión</th><th>Institución</th><th>Fecha Inscripción</th></tr></thead>
                         <tbody id="tabla-inscriptos-body">
                             <tr><td colspan="7" style="text-align:center; padding: 20px; color: #666;">Cargando inscriptos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN ACCESOS DE UN CURSO PASADO (oculta hasta entrar) -->
+        <div id="cursos-accesos" class="section">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                <h1 id="acc-titulo-curso">Accesos</h1>
+                <div>
+                    <button class="btn-action" style="background-color: #e3f2fd; color: var(--color-primario);" onclick="showSection('cursos')"><i class="fas fa-arrow-left"></i> Volver a Cursos</button>
+                    <button class="btn-action" style="background-color: var(--color-primario); color: white;" id="btn-csv-accesos"><i class="fas fa-download"></i> Descargar CSV</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Apellido</th><th>Nombre</th><th>Documento</th><th>Email</th><th>Teléfono</th><th>Ciudad/Provincia</th><th>Profesión</th><th>Institución</th><th>Fecha de Acceso</th></tr></thead>
+                        <tbody id="tabla-accesos-body">
+                            <tr><td colspan="9" style="text-align:center; padding: 20px; color: #666;">Cargando accesos...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -394,10 +452,22 @@
             if(tipo === 'producto') {
                 document.querySelectorAll('input[name="cat_check"]').forEach(c => c.checked = false);
             }
+            // Limpieza extra del bloque de contenido pasado (solo aplica al form de curso)
+            if (tipo === 'curso') {
+                colasDeArchivos['contenido'] = [];
+                const prevCont = document.getElementById('preview-contenido');
+                if (prevCont) prevCont.innerHTML = '';
+                const linksCont = document.getElementById('contenido-links-container');
+                if (linksCont) linksCont.innerHTML = '';
+                const chk = document.getElementById('cur_es_pasado');
+                if (chk) { chk.checked = false; }
+                const bloque = document.getElementById('bloque-contenido-pasado');
+                if (bloque) bloque.style.display = 'none';
+            }
         }
 
         // --- 2. SISTEMA DE ARCHIVOS ACUMULATIVO ---
-        const colasDeArchivos = { 'producto': [], 'novedad': [], 'evento': [], 'curso': [] };
+        const colasDeArchivos = { 'producto': [], 'novedad': [], 'evento': [], 'curso': [], 'contenido': [] };
         function setupUploader(tipo) {
             const dropZone = document.getElementById(`drop-${tipo}`);
             const input = document.getElementById(`file-${tipo}`);
@@ -441,6 +511,7 @@
         setupUploader('novedad');
         setupUploader('evento');
         setupUploader('curso');
+        setupUploader('contenido'); // galería de contenido de cursos pasados
 
         // --- 3. ENVÍO DE DATOS ---
         async function conectarFormulario(tipo, urlApi) {
@@ -491,10 +562,80 @@
             });
         }
 
+        // Envío específico del formulario de CURSO: además de la portada, adjunta la galería de
+        // contenido y las filas de links. Reutiliza la misma lógica de feedback que conectarFormulario.
+        function conectarFormularioCurso(urlApi) {
+            const form = document.getElementById('form-curso');
+            const status = document.getElementById('status-curso');
+            const btn = form.querySelector('button[type="submit"]');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+
+                // Portada (mismo mecanismo que el resto)
+                formData.delete('imagenes');
+                colasDeArchivos['curso'].forEach(f => formData.append('imagenes', f));
+
+                // Galería de contenido pasado
+                formData.delete('contenido_imagenes_files');
+                colasDeArchivos['contenido'].forEach(f => formData.append('contenido_imagenes_files', f));
+
+                btn.disabled = true;
+                btn.innerText = "Subiendo...";
+                status.style.color = "#666";
+                status.innerText = "Procesando...";
+
+                try {
+                    const res = await fetch(urlApi, { method: 'POST', body: formData });
+                    const contentType = res.headers.get("content-type");
+                    if (!contentType || !contentType.includes("application/json")) throw new Error("Error en servidor. Verifica conexión/Cloudinary.");
+                    const data = await res.json();
+                    if (data.success) {
+                        status.style.color = "green";
+                        status.innerText = " ¡Guardado con éxito! Recargando...";
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        throw new Error(data.message || "Error desconocido");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    status.style.color = "red";
+                    status.innerText = "❌ " + error.message;
+                    btn.disabled = false;
+                    btn.innerText = "Reintentar";
+                }
+            });
+        }
+
+        // --- Toggle del bloque de contenido pasado + editor de links ---
+        const chkEsPasado = document.getElementById('cur_es_pasado');
+        const bloqueContenido = document.getElementById('bloque-contenido-pasado');
+        function actualizarBloqueContenido() {
+            bloqueContenido.style.display = chkEsPasado.checked ? 'block' : 'none';
+        }
+        chkEsPasado.addEventListener('change', actualizarBloqueContenido);
+
+        // Agrega una fila de link (título + url) al editor. Opcionalmente precargada.
+        function agregarFilaLink(titulo = '', url = '') {
+            const cont = document.getElementById('contenido-links-container');
+            const fila = document.createElement('div');
+            fila.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center;';
+            fila.innerHTML = `
+                <input type="text" name="contenido_link_titulo" placeholder="Etiqueta (ej: Grabación)" style="flex:1; margin:0;">
+                <input type="text" name="contenido_link_url" placeholder="https://..." style="flex:2; margin:0;">
+                <button type="button" class="btn-action btn-delete" style="margin:0;" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+            `;
+            fila.querySelector('input[name="contenido_link_titulo"]').value = titulo;
+            fila.querySelector('input[name="contenido_link_url"]').value = url;
+            cont.appendChild(fila);
+        }
+
         conectarFormulario('producto', '/admin/productos');
         conectarFormulario('novedad', '/admin/novedades');
         conectarFormulario('evento', '/admin/eventos');
-        conectarFormulario('curso', '/admin/cursos');
+        // El curso usa su propio envío (maneja galería de contenido + links), ver conectarFormularioCurso()
+        conectarFormularioCurso('/admin/cursos');
 
         // --- 4. UTILIDADES (BORRAR Y EDITAR) ---
         
@@ -515,7 +656,7 @@
             }
         }
 
-        function cargarImagenesExistentes(containerId, cadenaDeUrls) {
+        function cargarImagenesExistentes(containerId, cadenaDeUrls, inputName = 'imagenes_existentes') {
             const container = document.getElementById(containerId);
             // Limpiamos solo mensajes de texto, no borramos inputs nuevos si los hubiera (aunque resetForm limpia todo antes)
             container.innerHTML = ''; 
@@ -533,7 +674,7 @@
                 // El input hidden es la CLAVE: al enviar el form, se envían estos valores.
                 div.innerHTML = `
                     <img src="${url}" title="Imagen guardada">
-                    <input type="hidden" name="imagenes_existentes" value="${url}">
+                    <input type="hidden" name="${inputName}" value="${url}">
                     <button type="button" class="btn-remove" onclick="this.parentElement.remove()">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -638,6 +779,21 @@
 
             colasDeArchivos['curso'] = [];
             cargarImagenesExistentes('preview-curso', c.imagen_url);
+
+            // --- Campos de curso pasado ---
+            document.getElementById('cur_es_pasado').checked = !!c.es_pasado;
+            document.getElementById('cur_contenido_mensaje').value = c.contenido_mensaje || '';
+            actualizarBloqueContenido();
+
+            // Galería de contenido (imágenes ya guardadas → inputs hidden name="contenido_imagenes_existentes")
+            colasDeArchivos['contenido'] = [];
+            const galeria = Array.isArray(c.contenido_imagenes) ? c.contenido_imagenes : [];
+            cargarImagenesExistentes('preview-contenido', galeria.join(','), 'contenido_imagenes_existentes');
+
+            // Links de interés
+            document.getElementById('contenido-links-container').innerHTML = '';
+            (c.contenido_links || []).forEach(l => agregarFilaLink(l.titulo || '', l.url || ''));
+
             window.scrollTo(0, 0);
             showSection('cursos');
         }
@@ -674,7 +830,7 @@
                 };
 
                 if (data.inscriptos.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #666;">Todavía no hay inscriptos para este curso.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px; color: #666;">Todavía no hay inscriptos para este curso.</td></tr>';
                     return;
                 }
 
@@ -683,10 +839,12 @@
                     const fila = document.createElement('tr');
                     const fecha = new Date(i.createdAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
                     fila.innerHTML = `
-                        <td>${i.nombre_completo}</td>
+                        <td>${i.apellido}</td>
+                        <td>${i.nombre}</td>
                         <td>${i.documento}</td>
                         <td><a href="mailto:${i.email}" style="color: var(--color-primario);">${i.email}</a></td>
                         <td>${i.telefono}</td>
+                        <td>${i.ciudad_provincia}</td>
                         <td>${i.profesion}</td>
                         <td>${i.institucion}</td>
                         <td>${fecha}</td>
@@ -695,7 +853,51 @@
                 });
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: red;">Error al cargar inscriptos.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px; color: red;">Error al cargar inscriptos.</td></tr>';
+            }
+        }
+
+        // Ver accesos (desbloqueos) de un curso pasado
+        async function verAccesos(idCurso, tituloCurso) {
+            showSection('cursos-accesos', 'cursos');
+            document.getElementById('acc-titulo-curso').textContent = 'Accesos: ' + tituloCurso;
+            const tbody = document.getElementById('tabla-accesos-body');
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px; color: #666;">Cargando accesos...</td></tr>';
+
+            document.getElementById('btn-csv-accesos').onclick = () => {
+                window.location.href = `/admin/cursos/${idCurso}/accesos/csv`;
+            };
+
+            try {
+                const res = await fetch(`/admin/cursos/${idCurso}/accesos`);
+                const data = await res.json();
+                if (!data.success) throw new Error('Error al cargar accesos');
+
+                if (data.accesos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px; color: #666;">Todavía nadie desbloqueó el contenido de este curso.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                data.accesos.forEach(i => {
+                    const fila = document.createElement('tr');
+                    const fecha = new Date(i.createdAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+                    fila.innerHTML = `
+                        <td>${i.apellido}</td>
+                        <td>${i.nombre}</td>
+                        <td>${i.documento}</td>
+                        <td><a href="mailto:${i.email}" style="color: var(--color-primario);">${i.email}</a></td>
+                        <td>${i.telefono}</td>
+                        <td>${i.ciudad_provincia}</td>
+                        <td>${i.profesion}</td>
+                        <td>${i.institucion}</td>
+                        <td>${fecha}</td>
+                    `;
+                    tbody.appendChild(fila);
+                });
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px; color: red;">Error al cargar accesos.</td></tr>';
             }
         }
         // --- 5. LOGICA DE BÚSQUEDA Y FILTRADO INTELIGENTE ---

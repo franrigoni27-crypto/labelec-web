@@ -254,6 +254,62 @@
         font-weight: 600;
         min-height: 22px;
     }
+
+    /* --- Aviso de desbloqueo (para cursos pasados) --- */
+    .modal-aviso-desbloqueo {
+        background: #fff4e5;
+        border: 1px solid #ffd8a8;
+        color: #b25a00;
+        padding: 12px 15px;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    /* --- Contenido desbloqueado --- */
+    #contenido-desbloqueado { display: none; }
+    #contenido-desbloqueado.active { display: block; }
+
+    .contenido-mensaje {
+        font-size: 15px;
+        color: #333;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        margin-bottom: 20px;
+    }
+    .contenido-galeria {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .contenido-galeria a { display: block; border-radius: 8px; overflow: hidden; }
+    .contenido-galeria img {
+        width: 100%;
+        height: 110px;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.3s ease;
+    }
+    .contenido-galeria a:hover img { transform: scale(1.05); }
+
+    .contenido-links { list-style: none; padding: 0; margin: 0; }
+    .contenido-links li { margin-bottom: 10px; }
+    .contenido-links a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 15px;
+        background: #f4f6f8;
+        border: 1px solid #e0e6ea;
+        border-radius: 8px;
+        color: var(--color-primario);
+        text-decoration: none;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+    .contenido-links a:hover { background: #e3f2fd; border-color: var(--color-primario); }
 </style>
 
 <main>
@@ -275,12 +331,21 @@
         <h2 id="modal-titulo-curso">Inscripción</h2>
         <p id="modal-fecha-curso"></p>
 
+        <!-- Aviso solo visible en cursos pasados -->
+        <div class="modal-aviso-desbloqueo" id="modal-aviso-desbloqueo" style="display:none;">
+             Esta es una <strong>capacitación pasada</strong>. Completá tus datos para desbloquear el contenido (grabación, materiales y links de interés).
+        </div>
+
         <form class="modal-form" id="form-inscripcion">
             <input type="hidden" id="ins-curso-id">
 
             <div class="form-group">
-                <label>Nombre completo *</label>
-                <input type="text" id="ins-nombre-completo" required>
+                <label>Apellido *</label>
+                <input type="text" id="ins-apellido" required>
+            </div>
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" id="ins-nombre" required>
             </div>
             <div class="form-group">
                 <label>Número de documento *</label>
@@ -295,6 +360,10 @@
                 <input type="tel" id="ins-telefono" required>
             </div>
             <div class="form-group">
+                <label>Ciudad o Provincia *</label>
+                <input type="text" id="ins-ciudad-provincia" required>
+            </div>
+            <div class="form-group">
                 <label>Profesión *</label>
                 <input type="text" id="ins-profesion" required>
             </div>
@@ -306,6 +375,16 @@
             <button type="submit" class="modal-submit" id="btn-enviar-inscripcion">Confirmar Inscripción</button>
             <p id="modal-status"></p>
         </form>
+
+        <!-- Contenido desbloqueado (reemplaza visualmente al form tras completar, en cursos pasados) -->
+        <div id="contenido-desbloqueado">
+            <div class="modal-aviso-desbloqueo" style="background:#e6f7ed; border-color:#a3e0bd; color:#1a7d43;">
+                ✓ ¡Contenido desbloqueado! Ya podés acceder a los materiales.
+            </div>
+            <div class="contenido-mensaje" id="cont-mensaje"></div>
+            <div class="contenido-galeria" id="cont-galeria"></div>
+            <ul class="contenido-links" id="cont-links"></ul>
+        </div>
     </div>
 </div>
 
@@ -336,9 +415,9 @@
                     imgPortada = '/' + imgPortada;
                 }
 
-                const cupoLleno = curso.cupo_maximo > 0 && curso.inscriptos_count >= curso.cupo_maximo;
+                const cupoLleno = !curso.es_pasado && curso.cupo_maximo > 0 && curso.inscriptos_count >= curso.cupo_maximo;
                 let cupoTexto = '';
-                if (curso.cupo_maximo > 0) {
+                if (!curso.es_pasado && curso.cupo_maximo > 0) {
                     const restantes = curso.cupo_maximo - curso.inscriptos_count;
                     cupoTexto = `<p class="course-cupo">📍 ${restantes > 0 ? restantes : 0} cupos disponibles de ${curso.cupo_maximo}</p>`;
                 }
@@ -350,12 +429,19 @@
                 card.dataset.cursoId = curso._id;
                 card.dataset.cursoTitulo = curso.titulo;
                 card.dataset.cursoFecha = `${fechaTexto} - ${horaTexto}hs`;
+                card.dataset.cursoPasado = curso.es_pasado ? '1' : '';
 
                 const disertanteHTML = curso.disertante ? `<p class="course-disertante">👤 ${curso.disertante}</p>` : '';
 
-                const botonHTML = cupoLleno
-                    ? `<div class="btn-cupo-lleno">Cupo Completo</div>`
-                    : `<button class="btn-inscribirse" data-action="inscribirse">Inscribirse</button>`;
+                // Curso pasado: no aplica cupo, el botón invita a ver la capacitación
+                let botonHTML;
+                if (curso.es_pasado) {
+                    botonHTML = `<button class="btn-inscribirse" data-action="inscribirse">Ver capacitación pasada</button>`;
+                } else if (cupoLleno) {
+                    botonHTML = `<div class="btn-cupo-lleno">Cupo Completo</div>`;
+                } else {
+                    botonHTML = `<button class="btn-inscribirse" data-action="inscribirse">Inscribirse</button>`;
+                }
 
                 card.innerHTML = `
                     <div class="course-img-container">
@@ -380,7 +466,7 @@
                 const btn = card.querySelector('[data-action="inscribirse"]');
                 if (btn) {
                     btn.addEventListener('click', () => {
-                        abrirModal(card.dataset.cursoId, card.dataset.cursoTitulo, card.dataset.cursoFecha);
+                        abrirModal(card.dataset.cursoId, card.dataset.cursoTitulo, card.dataset.cursoFecha, card.dataset.cursoPasado === '1');
                     });
                 }
 
@@ -396,15 +482,34 @@
     // --- Modal ---
     const modal = document.getElementById('modal-inscripcion');
 
-    function abrirModal(cursoId, titulo, fechaTexto) {
+    // Guardamos si el curso abierto es "pasado" para decidir el endpoint en el submit
+    let cursoActualEsPasado = false;
+
+    function abrirModal(cursoId, titulo, fechaTexto, esPasado) {
+        cursoActualEsPasado = !!esPasado;
+
         document.getElementById('ins-curso-id').value = cursoId;
         document.getElementById('modal-titulo-curso').textContent = titulo;
         document.getElementById('modal-fecha-curso').textContent = '📅 ' + fechaTexto;
         document.getElementById('form-inscripcion').reset();
         document.getElementById('modal-status').textContent = '';
+
+        // Reset del panel de contenido desbloqueado
+        const panelContenido = document.getElementById('contenido-desbloqueado');
+        panelContenido.classList.remove('active');
+        document.getElementById('form-inscripcion').style.display = 'block';
+
+        // Aviso + texto del botón según tipo
+        const aviso = document.getElementById('modal-aviso-desbloqueo');
         const btn = document.getElementById('btn-enviar-inscripcion');
+        if (cursoActualEsPasado) {
+            aviso.style.display = 'block';
+            btn.textContent = 'Desbloquear contenido';
+        } else {
+            aviso.style.display = 'none';
+            btn.textContent = 'Confirmar Inscripción';
+        }
         btn.disabled = false;
-        btn.textContent = 'Confirmar Inscripción';
         modal.classList.add('active');
     }
 
@@ -425,21 +530,29 @@
         const status = document.getElementById('modal-status');
 
         const datos = {
-            nombre_completo: document.getElementById('ins-nombre-completo').value,
+            apellido: document.getElementById('ins-apellido').value,
+            nombre: document.getElementById('ins-nombre').value,
             documento: document.getElementById('ins-documento').value,
             email: document.getElementById('ins-email').value,
             telefono: document.getElementById('ins-telefono').value,
+            ciudad_provincia: document.getElementById('ins-ciudad-provincia').value,
             profesion: document.getElementById('ins-profesion').value,
             institucion: document.getElementById('ins-institucion').value
         };
 
         btn.disabled = true;
-        btn.textContent = 'Enviando...';
+        btn.textContent = cursoActualEsPasado ? 'Desbloqueando...' : 'Enviando...';
         status.style.color = '#666';
         status.textContent = 'Procesando...';
 
+        // Endpoint y texto por defecto según el tipo de curso
+        const endpoint = cursoActualEsPasado
+            ? `/api/cursos/${cursoId}/desbloquear`
+            : `/api/cursos/${cursoId}/inscribir`;
+        const textoBtnDefault = cursoActualEsPasado ? 'Desbloquear contenido' : 'Confirmar Inscripción';
+
         try {
-            const res = await fetch(`/api/cursos/${cursoId}/inscribir`, {
+            const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datos)
@@ -447,28 +560,78 @@
             const data = await res.json();
 
             if (data.success) {
-                status.style.color = 'green';
-                status.textContent = '✓ ' + data.message;
-                btn.textContent = '¡Inscripto!';
-                setTimeout(() => {
-                    cerrarModal();
-                    // Recargar para reflejar nuevo conteo de cupo
-                    location.reload();
-                }, 2000);
+                if (cursoActualEsPasado) {
+                    // Mostrar el contenido desbloqueado en lugar del formulario
+                    mostrarContenidoDesbloqueado(data.contenido);
+                } else {
+                    status.style.color = 'green';
+                    status.textContent = '✓ ' + data.message;
+                    btn.textContent = '¡Inscripto!';
+                    setTimeout(() => {
+                        cerrarModal();
+                        location.reload();
+                    }, 2000);
+                }
             } else {
                 status.style.color = '#e74c3c';
                 status.textContent = '✗ ' + data.message;
                 btn.disabled = false;
-                btn.textContent = 'Confirmar Inscripción';
+                btn.textContent = textoBtnDefault;
             }
         } catch (err) {
             console.error(err);
             status.style.color = '#e74c3c';
             status.textContent = '✗ Error de conexión. Intentalo nuevamente.';
             btn.disabled = false;
-            btn.textContent = 'Confirmar Inscripción';
+            btn.textContent = textoBtnDefault;
         }
     });
+
+    // Renderiza el contenido desbloqueado y oculta el formulario
+    function mostrarContenidoDesbloqueado(contenido) {
+        contenido = contenido || {};
+        document.getElementById('form-inscripcion').style.display = 'none';
+
+        // Mensaje
+        document.getElementById('cont-mensaje').textContent = contenido.mensaje || '';
+
+        // Galería (con textContent/atributos seguros)
+        const galeria = document.getElementById('cont-galeria');
+        galeria.innerHTML = '';
+        (contenido.imagenes || []).forEach(url => {
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = 'Material de la capacitación';
+            a.appendChild(img);
+            galeria.appendChild(a);
+        });
+
+        // Links
+        const ulLinks = document.getElementById('cont-links');
+        ulLinks.innerHTML = '';
+        (contenido.links || []).forEach(l => {
+            if (!l.url) return;
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = l.url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            const icono = document.createElement('i');
+            icono.className = 'fas fa-external-link-alt';
+            const span = document.createElement('span');
+            span.textContent = l.titulo || l.url;
+            a.appendChild(icono);
+            a.appendChild(span);
+            li.appendChild(a);
+            ulLinks.appendChild(li);
+        });
+
+        document.getElementById('contenido-desbloqueado').classList.add('active');
+    }
 </script>
 
 <%- include('partials/footer') %>
