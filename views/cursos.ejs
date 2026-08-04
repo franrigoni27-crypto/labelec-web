@@ -107,6 +107,26 @@
         margin-bottom: 15px;
         flex-grow: 1;
     }
+    /* Colapsado: máximo 9 líneas con "..." */
+    .course-description.colapsada {
+        display: -webkit-box;
+        -webkit-line-clamp: 9;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .btn-saber-mas {
+        background: none;
+        border: none;
+        color: var(--color-primario);
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 0;
+        margin: -5px 0 15px 0;
+        font-family: 'Exo 2.0', sans-serif;
+        align-self: flex-start;
+    }
+    .btn-saber-mas:hover { text-decoration: underline; }
 
     .course-cupo {
         font-size: 13px;
@@ -310,6 +330,18 @@
         transition: 0.2s;
     }
     .contenido-links a:hover { background: #e3f2fd; border-color: var(--color-primario); }
+
+    /* --- Encabezados de grupo (próximos / pasados) --- */
+    .grupo-cursos { max-width: 1200px; margin: 0 auto 50px auto; }
+    .grupo-titulo {
+        font-size: 26px;
+        color: var(--color-primario);
+        margin: 40px 0 20px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e0e6ea;
+    }
+    .grupo-titulo.pasados { color: #b25a00; border-bottom-color: #ffd8a8; }
+    .grupo-vacio { text-align: center; color: #999; padding: 20px; }
 </style>
 
 <main>
@@ -319,7 +351,21 @@
             <p class="section-subtitle">Sumate a nuestras capacitaciones online sobre tecnología médica. Inscripción gratuita.</p>
 
             <div id="loader-container">Cargando cursos...</div>
-            <div id="courses-grid-container" class="courses-grid"></div>
+
+            <div id="grupo-proximos" class="grupo-cursos" style="display:none;">
+                <h2 class="grupo-titulo">Próximas capacitaciones</h2>
+                <div id="grid-proximos" class="courses-grid"></div>
+            </div>
+
+            <div id="grupo-pasados" class="grupo-cursos" style="display:none;">
+                <h2 class="grupo-titulo pasados">Capacitaciones pasadas</h2>
+                <div id="grid-pasados" class="courses-grid"></div>
+            </div>
+
+            <div id="sin-cursos" style="display:none; text-align:center; padding: 40px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-width:600px; margin:0 auto;">
+                <h3>No hay cursos disponibles en este momento.</h3>
+                <p>Vuelva a consultar pronto.</p>
+            </div>
         </div>
     </section>
 </main>
@@ -390,8 +436,12 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
-        const grid = document.getElementById('courses-grid-container');
         const loader = document.getElementById('loader-container');
+        const grupoProximos = document.getElementById('grupo-proximos');
+        const grupoPasados = document.getElementById('grupo-pasados');
+        const gridProximos = document.getElementById('grid-proximos');
+        const gridPasados = document.getElementById('grid-pasados');
+        const sinCursos = document.getElementById('sin-cursos');
 
         try {
             const response = await fetch('/api/cursos');
@@ -401,83 +451,108 @@
             loader.style.display = 'none';
 
             if (cursos.length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);"><h3>No hay cursos disponibles en este momento.</h3><p>Vuelva a consultar pronto.</p></div>';
+                sinCursos.style.display = 'block';
                 return;
             }
 
-            cursos.forEach(curso => {
-                const fechaObj = new Date(curso.fecha);
-                const fechaTexto = fechaObj.toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                const horaTexto = fechaObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+            // La API ya devuelve activos ordenados por fecha asc.
+            const proximos = cursos.filter(c => !c.es_pasado);
+            const pasados = cursos.filter(c => c.es_pasado);
 
-                let imgPortada = curso.imagen_url || '/img/favicon.png';
-                if (imgPortada && !imgPortada.startsWith('http') && !imgPortada.startsWith('/')) {
-                    imgPortada = '/' + imgPortada;
-                }
+            proximos.forEach(curso => gridProximos.appendChild(crearCardCurso(curso)));
+            pasados.forEach(curso => gridPasados.appendChild(crearCardCurso(curso)));
 
-                const cupoLleno = !curso.es_pasado && curso.cupo_maximo > 0 && curso.inscriptos_count >= curso.cupo_maximo;
-                let cupoTexto = '';
-                if (!curso.es_pasado && curso.cupo_maximo > 0) {
-                    const restantes = curso.cupo_maximo - curso.inscriptos_count;
-                    cupoTexto = `<p class="course-cupo">📍 ${restantes > 0 ? restantes : 0} cupos disponibles de ${curso.cupo_maximo}</p>`;
-                }
-
-                const card = document.createElement('div');
-                card.className = 'course-card';
-
-                // Guardamos los datos en el card via dataset (seguro contra caracteres especiales)
-                card.dataset.cursoId = curso._id;
-                card.dataset.cursoTitulo = curso.titulo;
-                card.dataset.cursoFecha = `${fechaTexto} - ${horaTexto}hs`;
-                card.dataset.cursoPasado = curso.es_pasado ? '1' : '';
-
-                const disertanteHTML = curso.disertante ? `<p class="course-disertante">👤 ${curso.disertante}</p>` : '';
-
-                // Curso pasado: no aplica cupo, el botón invita a ver la capacitación
-                let botonHTML;
-                if (curso.es_pasado) {
-                    botonHTML = `<button class="btn-inscribirse" data-action="inscribirse">Ver capacitación pasada</button>`;
-                } else if (cupoLleno) {
-                    botonHTML = `<div class="btn-cupo-lleno">Cupo Completo</div>`;
-                } else {
-                    botonHTML = `<button class="btn-inscribirse" data-action="inscribirse">Inscribirse</button>`;
-                }
-
-                card.innerHTML = `
-                    <div class="course-img-container">
-                        <img src="${imgPortada}" alt="" class="course-img" onerror="this.src='/img/favicon.png'">
-                    </div>
-                    <div class="course-content">
-                        <span class="course-date">📅 ${fechaTexto} - ${horaTexto}hs</span>
-                        <h2 class="course-title"></h2>
-                        ${disertanteHTML}
-                        <p class="course-description"></p>
-                        ${cupoTexto}
-                        <div class="course-footer">
-                            ${botonHTML}
-                        </div>
-                    </div>
-                `;
-                // Inyectamos texto con textContent para evitar XSS en título/descripción
-                card.querySelector('.course-title').textContent = curso.titulo;
-                card.querySelector('.course-description').textContent = curso.descripcion;
-                card.querySelector('.course-img').alt = curso.titulo;
-
-                const btn = card.querySelector('[data-action="inscribirse"]');
-                if (btn) {
-                    btn.addEventListener('click', () => {
-                        abrirModal(card.dataset.cursoId, card.dataset.cursoTitulo, card.dataset.cursoFecha, card.dataset.cursoPasado === '1');
-                    });
-                }
-
-                grid.appendChild(card);
-            });
+            // Mostramos cada grupo solo si tiene contenido; próximos siempre va primero por orden en el HTML
+            if (proximos.length > 0) grupoProximos.style.display = 'block';
+            if (pasados.length > 0) grupoPasados.style.display = 'block';
 
         } catch (error) {
             console.error(error);
             loader.innerHTML = '<span style="color:red">Error al cargar los cursos. Por favor recarga la página.</span>';
         }
     });
+
+    // Construye y devuelve la tarjeta de un curso (próximo o pasado)
+    function crearCardCurso(curso) {
+        const fechaObj = new Date(curso.fecha);
+        const fechaTexto = fechaObj.toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const horaTexto = fechaObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+        let imgPortada = curso.imagen_url || '/img/favicon.png';
+        if (imgPortada && !imgPortada.startsWith('http') && !imgPortada.startsWith('/')) {
+            imgPortada = '/' + imgPortada;
+        }
+
+        const cupoLleno = !curso.es_pasado && curso.cupo_maximo > 0 && curso.inscriptos_count >= curso.cupo_maximo;
+        let cupoTexto = '';
+        if (!curso.es_pasado && curso.cupo_maximo > 0) {
+            const restantes = curso.cupo_maximo - curso.inscriptos_count;
+            cupoTexto = `<p class="course-cupo">📍 ${restantes > 0 ? restantes : 0} cupos disponibles de ${curso.cupo_maximo}</p>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'course-card';
+
+        card.dataset.cursoId = curso._id;
+        card.dataset.cursoTitulo = curso.titulo;
+        card.dataset.cursoFecha = `${fechaTexto} - ${horaTexto}hs`;
+        card.dataset.cursoPasado = curso.es_pasado ? '1' : '';
+
+        const disertanteHTML = curso.disertante ? `<p class="course-disertante">👤 ${curso.disertante}</p>` : '';
+
+        let botonHTML;
+        if (curso.es_pasado) {
+            botonHTML = `<button class="btn-inscribirse" data-action="inscribirse">Ver capacitación pasada</button>`;
+        } else if (cupoLleno) {
+            botonHTML = `<div class="btn-cupo-lleno">Cupo Completo</div>`;
+        } else {
+            botonHTML = `<button class="btn-inscribirse" data-action="inscribirse">Inscribirse</button>`;
+        }
+
+        card.innerHTML = `
+            <div class="course-img-container">
+                <img src="${imgPortada}" alt="" class="course-img" onerror="this.src='/img/favicon.png'">
+            </div>
+            <div class="course-content">
+                <span class="course-date">📅 ${fechaTexto} - ${horaTexto}hs</span>
+                <h2 class="course-title"></h2>
+                ${disertanteHTML}
+                <p class="course-description colapsada"></p>
+                <button class="btn-saber-mas" type="button" style="display:none;">Saber más</button>
+                ${cupoTexto}
+                <div class="course-footer">
+                    ${botonHTML}
+                </div>
+            </div>
+        `;
+        // Texto seguro (evita XSS)
+        card.querySelector('.course-title').textContent = curso.titulo;
+        const descEl = card.querySelector('.course-description');
+        descEl.textContent = curso.descripcion;
+        card.querySelector('.course-img').alt = curso.titulo;
+
+        // Botón "Saber más": solo aparece si la descripción supera las 9 líneas (hay desborde real).
+        // Se mide tras el render, cuando el navegador ya calculó la altura.
+        const btnSaberMas = card.querySelector('.btn-saber-mas');
+        requestAnimationFrame(() => {
+            if (descEl.scrollHeight > descEl.clientHeight + 1) {
+                btnSaberMas.style.display = 'block';
+            }
+        });
+        btnSaberMas.addEventListener('click', () => {
+            const colapsada = descEl.classList.toggle('colapsada');
+            btnSaberMas.textContent = colapsada ? 'Saber más' : 'Saber menos';
+        });
+
+        const btn = card.querySelector('[data-action="inscribirse"]');
+        if (btn) {
+            btn.addEventListener('click', () => {
+                abrirModal(card.dataset.cursoId, card.dataset.cursoTitulo, card.dataset.cursoFecha, card.dataset.cursoPasado === '1');
+            });
+        }
+
+        return card;
+    }
 
     // --- Modal ---
     const modal = document.getElementById('modal-inscripcion');

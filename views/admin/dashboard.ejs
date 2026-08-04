@@ -337,11 +337,20 @@
 
             <div class="card">
                 <h3>Cursos Registrados</h3>
+                <%
+                    // Separamos en dos grupos manteniendo el orden que ya vino del server (fecha asc)
+                    const cursosProximos = cursos.filter(c => !c.es_pasado);
+                    const cursosPasados = cursos.filter(c => c.es_pasado);
+                %>
                 <div class="table-container">
                     <table>
                         <thead><tr><th>Img</th><th>Título</th><th>Fecha</th><th>Inscriptos</th><th>Estado</th><th>Acciones</th></tr></thead>
                         <tbody>
-                            <% cursos.forEach(c => { %>
+                            <tr><td colspan="6" style="background:#eef4f8; color:var(--color-primario); font-weight:700; padding:10px;">Próximos</td></tr>
+                            <% if (cursosProximos.length === 0) { %>
+                                <tr><td colspan="6" style="text-align:center; color:#999; padding:15px;">No hay cursos próximos.</td></tr>
+                            <% } %>
+                            <% cursosProximos.forEach(c => { %>
                             <tr>
                                 <td><img src="<%= c.imagen_url || '/img/favicon.png' %>" class="thumb"></td>
                                 <td><%= c.titulo %></td>
@@ -365,6 +374,35 @@
                                     <% if (c.es_pasado) { %>
                                     <button class="btn-action" style="background-color: #fff4e5; color: #e67700;" data-id="<%= c._id %>" data-titulo="<%= c.titulo %>" onclick="verAccesos(this.dataset.id, this.dataset.titulo)"><i class="fas fa-lock-open"></i> Accesos</button>
                                     <% } %>
+                                    <button class="btn-action btn-delete" onclick="borrarItem('/admin/cursos/delete/<%= c._id %>')"><i class="fas fa-trash"></i> Borrar</button>
+                                </td>
+                            </tr>
+                            <% }) %>
+
+                            <tr><td colspan="6" style="background:#fff4e5; color:#b25a00; font-weight:700; padding:10px;">Pasados</td></tr>
+                            <% if (cursosPasados.length === 0) { %>
+                                <tr><td colspan="6" style="text-align:center; color:#999; padding:15px;">No hay cursos pasados.</td></tr>
+                            <% } %>
+                            <% cursosPasados.forEach(c => { %>
+                            <tr>
+                                <td><img src="<%= c.imagen_url || '/img/favicon.png' %>" class="thumb"></td>
+                                <td><%= c.titulo %></td>
+                                <td><%= c.fecha ? new Date(c.fecha).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '-' %></td>
+                                <td>
+                                    <%= c.inscriptos_count %><% if (c.cupo_maximo > 0) { %> / <%= c.cupo_maximo %><% } %>
+                                </td>
+                                <td>
+                                    <% if (c.activo) { %>
+                                        <span style="color: #2e7d32; font-weight: 600;">● Activo</span>
+                                    <% } else { %>
+                                        <span style="color: #999; font-weight: 600;">● Inactivo</span>
+                                    <% } %>
+                                    <br><span style="color: #e67700; font-weight: 600; font-size: 12px;">⏱ Pasado</span>
+                                </td>
+                                <td>
+                                    <button class="btn-action btn-edit" onclick="editarCurso('<%= c._id %>')"><i class="fas fa-edit"></i> Editar</button>
+                                    <button class="btn-action" style="background-color: #e8f5e9; color: #2e7d32;" data-id="<%= c._id %>" data-titulo="<%= c.titulo %>" onclick="verInscriptos(this.dataset.id, this.dataset.titulo)"><i class="fas fa-users"></i> Inscriptos</button>
+                                    <button class="btn-action" style="background-color: #fff4e5; color: #e67700;" data-id="<%= c._id %>" data-titulo="<%= c.titulo %>" onclick="verAccesos(this.dataset.id, this.dataset.titulo)"><i class="fas fa-lock-open"></i> Accesos</button>
                                     <button class="btn-action btn-delete" onclick="borrarItem('/admin/cursos/delete/<%= c._id %>')"><i class="fas fa-trash"></i> Borrar</button>
                                 </td>
                             </tr>

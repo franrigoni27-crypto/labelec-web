@@ -589,13 +589,18 @@
             const cursos = await response.json();
 
             gridContainer.innerHTML = '';
-            if (cursos.length === 0) {
+
+            // Solo cursos PRÓXIMOS (los pasados no van en la landing).
+            // La API ya devuelve solo activos y ordenados por fecha asc.
+            const cursosProximos = cursos.filter(c => !c.es_pasado);
+
+            if (cursosProximos.length === 0) {
                 gridContainer.innerHTML = '<p style="text-align:center; width:100%; color:#777">No hay cursos próximos por el momento.</p>';
                 return;
             }
 
-            // Mostrar los próximos 3 (ya vienen ordenados por fecha asc desde la API)
-            cursos.slice(0, 3).forEach(curso => {
+            // Mostrar los próximos 3
+            cursosProximos.slice(0, 3).forEach(curso => {
                 const fechaObj = new Date(curso.fecha);
                 const fechaTexto = fechaObj.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
                 const horaTexto = fechaObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
